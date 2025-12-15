@@ -11,39 +11,44 @@ const error = ref<string>('')
 
 const emit = defineEmits<{
        (e: 'switch-to-login'): void,
-       (e: 'switch-to-complete'): void,
        (e: 'complete', data: { name: string, surname: string, email: string, password: string }): void
 }>()
 
 const handleRegister = async () => {
        isLoading.value = true;
+       error.value = '';
+
        try {
-              console.log('При регистрации добавлено:', {
+              // basic validation
+              if (!email.value || !password.value || !name.value || !surname.value) {
+                     error.value = 'Заполните все поля';
+                     return;
+              }
+              if (password.value !== confirmPassword.value) {
+                     error.value = 'Пароли не совпадают';
+                     return;
+              }
+
+              const payload = {
                      name: name.value,
                      surname: surname.value,
                      email: email.value,
                      password: password.value
-              })
-              emit('complete', { name: name.value, surname: surname.value, email: email.value, password: password.value })
-              handleSwitchToComplete()
+              };
 
+              console.log('При регистрации добавлено:', payload)
+              // Отправляем данные родителю; родитель (BaseModal) выполнит запрос регистрации
+              emit('complete', payload)
+
+              // НЕ очищаем и НЕ переключаем модалку здесь.
+              // Родитель контролирует переход на экран "complete" только после успешной регистрации.
        } catch (err) {
               error.value = 'Ошибка при регистрации'
               console.error(error.value + ' : ' + err)
+              throw err
        } finally {
               isLoading.value = false
        }
-}
-
-const handleSwitchToComplete = () => {
-       name.value = ''
-       surname.value = ''
-       email.value = ''
-       password.value = ''
-       confirmPassword.value = ''
-       error.value = ''
-       emit('switch-to-complete')
-       console.log("Switch to complete");
 }
 
 const handleSwitchToLogin = () => {

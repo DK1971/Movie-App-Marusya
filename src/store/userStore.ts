@@ -1,11 +1,10 @@
 import { defineStore } from "pinia";
-import { computed, ref } from "vue";
+import { ref } from "vue";
 import CINEMA_API from "../api/cinemaguideAPI";
 import type { IUser } from "../types/auth.ts";
 import type { IMovies } from "../types/movies.ts";
 
 export const useUserStore = defineStore("user", () => {
-  // state
   const user = ref<IUser | null>(
     (() => {
       try {
@@ -23,52 +22,18 @@ export const useUserStore = defineStore("user", () => {
   const isRegCompleted = ref<boolean>(false);
   const isLoading = ref<boolean>(false);
   const favorites = ref<IMovies[] | null>(null);
-  const error = ref<any>(null);
+  const error = ref<string | null>(null);
 
-  // actions
-  // Сохранение аутентификации (token, data)
-  const persistAuth = (userData: any, authToken?: string) => {
-    try {
-      if (authToken) {
-        token.value = authToken;
-        localStorage.setItem("token", authToken);
-      }
-      if (userData) {
-        user.value = userData;
-        localStorage.setItem("user", JSON.stringify(userData));
-      }
-      isAuthorized.value = true;
-      // Сохраняем флаг в localStorage для восстановления состояния
-      localStorage.setItem("isAuthorized", "true");
-    } catch (error) {
-      console.warn("Не удалось сохранить аутенфикацию! ", error);
-    }
-  };
-
-  // Очистка данных аутентификации
-  const clearAuth = () => {
-    try {
-      token.value = "";
-      user.value = null;
-      isAuthorized.value = false;
-      localStorage.removeItem("isAuthorized");
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-    } catch (error) {
-      console.warn("Не удалось очистить аутенфикацию! ", error);
-    }
-  };
-
-  // Информирует пользователя об ошибке (и логирует подробную информацию)
-  const handleError = (err: any) => {
+  // handleError больше не бросает исключение — он записывает сообщение в error и возвращает текст
+  const handleError = (err: any): string => {
     const res = err?.response;
     const message =
       res?.data?.message ||
+      res?.data?.error ||
       (res?.data && JSON.stringify(res.data)) ||
       err.message ||
       String(err);
     error.value = message;
-    // Логируем полную структуру ответа для отладки
     console.error("API Error:", {
       status: res?.status,
       url: res?.config?.url,
@@ -78,89 +43,149 @@ export const useUserStore = defineStore("user", () => {
       message,
       originalError: err,
     });
-    throw err;
+    return message;
   };
 
-  // Выполняет выход и очистку данных аутентификации
+  const persistAuth = (userData: any, authToken?: string) => {
+    try {
+      if (authToken) {
+        token.value = authToken;
+        localStorage.setItem("token", authToken);
+        isAuthorized.value = true;
+        localStorage.setItem("isAuthorized", "true");
+      }
+      if (userData) {
+        user.value = userData;
+        localStorage.setItem("user", JSON.stringify(userData));
+      }
+    } catch (err) {
+      console.warn("Не удалось сохранить аутенфикацию! ", err);
+    }
+  };
+
+  const clearAuth = () => {
+    try {
+      token.value = "";
+      user.value = null;
+      isAuthorized.value = false;
+      localStorage.removeItem("isAuthorized");
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+    } catch (err) {
+      console.warn("Не удалось очистить аутенфикацию! ", err);
+    }
+  };
+
   const logOut = async () => {
     try {
       await CINEMA_API.get("/auth/logout");
       clearAuth();
       favorites.value = [];
-    } catch (error) {
-      // ignore logout errors but log
-      console.warn("Запрос на выход не удался ", error);
+    } catch (err) {
+      console.warn("Запрос на выход не удался ", err);
     }
   };
 
-  // Выполняет вход и сохраняет токен/пользователя в сторе
+  // Вход — возвращаем объект { success, message?, data? } и не бросаем исключение
   const loginUser = async (authInfo: {
-    email: string;
+    email?: string;
     password: string;
-  }): Promise<any> => {
+    login?: string;
+  }): Promise<{ success: boolean; message?: string; data?: any }> => {
     isLoading.value = true;
+    error.value = null;
     try {
-      if (!authInfo.email || !authInfo.password) {
-        throw new Error("Электронная почта и пароль обязательны для входа!");
+      if ((!authInfo.email && !authInfo.login) || !authInfo.password) {
+        const msg = "Электронная почта/логин и пароль обязательны для входа!";
+        error.value = msg;
+        return { success: false, message: msg };
       }
-      // Запрос к api на login
+
       console.log("loginUser payload:", authInfo);
+
       const response = await CINEMA_API.post("/auth/login", authInfo);
       const data = response.data;
-      // поддерживаем несколько вариантов ответа
+
+      if (data && data.result === false) {
+        const msg = data.message || data.error || "Неверные учётные данные";
+        error.value = msg;
+        return { success: false, message: msg, data };
+      }
+
+      if (data && data.error) {
+        error.value = data.error;
+        return { success: false, message: data.error, data };
+      }
+
       const tokenValue =
         data?.token ||
         data?.accessToken ||
         (data?.data && data.data.token) ||
         "";
       const userData = data?.user || (data?.data && data.data.user) || data;
+
+      if (!tokenValue && !(userData && userData.id)) {
+        const msg = data?.message || data?.error || "Не удалось выполнить вход";
+        error.value = msg;
+        return { success: false, message: msg, data };
+      }
+
       persistAuth(userData, tokenValue);
       console.log("login response:", data);
-      return data;
-    } catch (error) {
-      handleError(error);
+      return { success: true, data };
+    } catch (err) {
+      const msg = handleError(err);
+      return { success: false, message: msg };
     } finally {
       isLoading.value = false;
     }
   };
 
-  // Регистрация пользователя
+  // Регистрация — также возвращаем структуру, не бросаем
   const registerUser = async (authInfo: {
     email: string;
     password: string;
     name?: string;
     surname?: string;
-  }): Promise<any> => {
+  }): Promise<{ success: boolean; message?: string; data?: any }> => {
     isLoading.value = true;
+    error.value = null;
     try {
       if (!authInfo.email || !authInfo.password) {
-        throw new Error(
-          "Электронная почта и пароль обязательны для регистрации"
-        );
+        const msg = "Электронная почта и пароль обязательны для регистрации";
+        error.value = msg;
+        return { success: false, message: msg };
       }
 
-      // Логируем payload перед отправкой, чтобы увидеть что именно уходит на сервер
       console.log("registerUser payload:", authInfo);
-
       const response = await CINEMA_API.post("/user", authInfo);
       const data = response.data;
-
-      // Логируем ответ сервера
       console.log("register response:", data);
 
-      // Не всегда API возвращает token — не сохраняем автоматически
+      if (data && data.error) {
+        error.value = data.error;
+        return { success: false, message: data.error, data };
+      }
+
+      if (data && data.result === false) {
+        const msg = data.message || "Регистрация не удалась";
+        error.value = msg;
+        return { success: false, message: msg, data };
+      }
+
       const tokenValue = data?.token || data?.accessToken || "";
       const userData = data?.user || (data?.data && data.data.user) || data;
-      if (tokenValue || userData) {
-        persistAuth(userData, tokenValue);
-      }
-      // помечаем завершённую регистрацию (если нужно в UI)
-      isRegCompleted.value = true;
 
-      return data;
-    } catch (error) {
-      // handleError выбросит ошибку после логирования
-      handleError(error);
+      if (tokenValue) {
+        persistAuth(userData, tokenValue);
+        return { success: true, data };
+      }
+
+      // Успех создания, но без токена — возвращаем успех, UI может показать экран "Зарегистрирован"
+      return { success: true, data };
+    } catch (err) {
+      const msg = handleError(err);
+      return { success: false, message: msg };
     } finally {
       isLoading.value = false;
     }
@@ -170,10 +195,9 @@ export const useUserStore = defineStore("user", () => {
     try {
       const response = await CINEMA_API.get("/profile");
       user.value = response.data;
-      console.log(user.value);
       return user.value;
-    } catch (error) {
-      handleError(error);
+    } catch (err) {
+      handleError(err);
     }
   };
 
@@ -190,7 +214,6 @@ export const useUserStore = defineStore("user", () => {
     return `${first}${second}`;
   };
 
-  // Возвращает все необходимые данные и методы
   return {
     user,
     token,
