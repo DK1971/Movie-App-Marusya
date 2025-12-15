@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { useUserStore } from '../../store/userStore.ts'
+
+const userStore = useUserStore()
 
 const name = ref('')
 const surname = ref('')
@@ -7,25 +10,30 @@ const email = ref('')
 const password = ref('')
 const confirmPassword = ref('')
 const isLoading = ref<boolean>(false)
-const error = ref<string>('')
+const localError = ref<string>('')
 
 const emit = defineEmits<{
        (e: 'switch-to-login'): void,
        (e: 'complete', data: { name: string, surname: string, email: string, password: string }): void
 }>()
 
+// Показываем ошибку из стора (server) или локальную валидацию
+const serverError = computed(() => userStore.error)
+const visibleError = computed(() => localError.value || serverError.value || '')
+
 const handleRegister = async () => {
+       localError.value = ''
+       userStore.error = null // сбрасываем старые серверные ошибки
        isLoading.value = true;
-       error.value = '';
 
        try {
               // basic validation
               if (!email.value || !password.value || !name.value || !surname.value) {
-                     error.value = 'Заполните все поля';
+                     localError.value = 'Заполните все поля';
                      return;
               }
               if (password.value !== confirmPassword.value) {
-                     error.value = 'Пароли не совпадают';
+                     localError.value = 'Пароли не совпадают';
                      return;
               }
 
@@ -43,21 +51,17 @@ const handleRegister = async () => {
               // НЕ очищаем и НЕ переключаем модалку здесь.
               // Родитель контролирует переход на экран "complete" только после успешной регистрации.
        } catch (err) {
-              error.value = 'Ошибка при регистрации'
-              console.error(error.value + ' : ' + err)
-              throw err
+              localError.value = 'Ошибка при регистрации'
+              console.error(localError.value + ' : ' + err)
        } finally {
               isLoading.value = false
        }
 }
 
 const handleSwitchToLogin = () => {
-       name.value = ''
-       surname.value = ''
-       email.value = ''
-       password.value = ''
-       confirmPassword.value = ''
-       error.value = ''
+       // не очищаем поля принудительно — пользователь может вернуться
+       localError.value = ''
+       userStore.error = null
        emit('switch-to-login')
 }
 
@@ -65,7 +69,7 @@ const handleSwitchToLogin = () => {
 
 <template>
        <form class="modal__content-wrapper" @submit.prevent="handleRegister">
-              <div v-if="error" class="modal__error">{{ error }}</div>
+              <div v-if="visibleError" class="modal__error">{{ visibleError }}</div>
               <input
                      v-model="email"
                      id="email"
