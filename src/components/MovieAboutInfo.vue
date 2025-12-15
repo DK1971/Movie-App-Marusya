@@ -1,20 +1,36 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue"
 import { storeToRefs } from "pinia"
-import TrailerModal from './Modals/TrailerModal.vue'
-import BaseModal from "./BaseModal.vue";
 import type { IMovies } from "../types/movies";
 import { useMoviesStore } from '../store/moviesStore.ts'
 import { useFavoriteMoviesStore } from '../store/favoriteMoviesStore.ts'
 import { useUserStore } from '../store/userStore.ts'
 import { scrollToTop, formatRating, getRatingColor, getTimeFormat, convertYoutubeUrl } from '../utils/movieUtils'
+import TrailerModal from './Modals/TrailerModal.vue'
+import BaseModal from "./BaseModal.vue";
 import BaseButtonFavorite from './BaseButtonFavorite.vue'
 
-const { movieById } = storeToRefs(useMoviesStore())
+const moviesStore = useMoviesStore()
+const { movieById } = storeToRefs(moviesStore)
+
 const favoriteStore = useFavoriteMoviesStore()
 const { favoriteMovies } = storeToRefs(favoriteStore)
+
 const userStore = useUserStore()
 const { isAuthorized } = storeToRefs(userStore)
+
+// Локальная реактивность для текущего фильма (шаблон будет автоматически разворачивать ref)
+const movie = movieById
+
+// Трейлер
+const isTrailerModalVisible = ref(false)
+const trailerUrl = ref("")
+
+// Модалка логина (локальная)
+const isModalVisible = ref(false)
+const toggleModalVisible = () => {
+  isModalVisible.value = !isModalVisible.value
+}
 
 interface MovieProps {
   movie: IMovies
@@ -27,29 +43,13 @@ const movieProps = defineProps<MovieProps>()
 const emit = defineEmits<{
   (e: 'open-modal'): void
   (e: 'toggle-movie'): void
-  (e: 'openTrailer'): void
+  (e: 'open-trailer'): void
 }>()
 
-const movie = computed(() => movieById.value)
-
-const movieID = ref<number | null>()
-movieID.value = movieById.value?.id
-
-// Управление открытием/закрытием модального окна
-// Определяем видимость
-const isModalVisible = ref(false);
-const isTrailerModalVisible = ref<boolean>(false)
-
-const toggleModalVisible = () => {
-  isModalVisible.value = !isModalVisible.value
-}
-
+// Переключение видимости модального окна трейлера
 const toggleTrailerVisible = () => {
   isTrailerModalVisible.value = !isTrailerModalVisible.value
 }
-
-// Задаем переменные и методы для открытия модального окна для просмотра трейлера
-const trailerUrl = ref<string>('')
 
 // Открыть модальное окно для просмотра трейлера
 const openTrailer = () => {
@@ -87,19 +87,15 @@ const toggleFavoriteMovie = async () => {
     } else {
       await favoriteStore.addFavoriteMovies(movie.value.id)
     }
-    // Обновим список
     await favoriteStore.getFavoriteMovies()
   } catch (error) {
     console.error('Добавление/удаление фильма в/из избранного: ', error)
   }
 }
 
-
 onMounted(() => {
-  scrollToTop()
+  scrollToTop()    // Прокрутка страницы вверх при монтировании компонента
 })
-
-
 </script>
 
 
@@ -129,8 +125,9 @@ onMounted(() => {
             Трейлер
           </button>
           <BaseButtonFavorite
-                              @click="toggleFavoriteMovie"
-                              @open-modal="openModal" />
+                              v-if="movie"
+                              :movie="movie"
+                              @open-modal="toggleModalVisible" />
         </div>
       </div>
       <div class="movie__poster">
@@ -175,7 +172,7 @@ onMounted(() => {
                 :trailerUrl="trailerUrl"
                 @close="toggleTrailerVisible" />
   <BaseModal
-             :modal-type="movieProps.modalType"
+             :modal-type="'login'"
              :visible="isModalVisible"
              @close="toggleModalVisible" />
 

@@ -1,9 +1,20 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useMoviesStore } from '../store/moviesStore.ts'
+import type { IMovies } from "../types/movies.ts";
 import { useUserStore } from '../store/userStore.ts'
 import { useFavoriteMoviesStore } from '../store/favoriteMoviesStore.ts';
+
+interface Props {
+  movie: IMovies
+}
+
+const props = defineProps<Props>()
+
+const emit = defineEmits<{
+  (e: 'open-modal'): void
+  (e: 'error', err: any): void
+}>()
 
 const userStore = useUserStore()
 const { isAuthorized } = storeToRefs(userStore)
@@ -11,47 +22,39 @@ const { isAuthorized } = storeToRefs(userStore)
 const favoriteStore = useFavoriteMoviesStore()
 const { favoriteMovies } = storeToRefs(favoriteStore)
 
-const { movieRandom } = storeToRefs(useMoviesStore())
-
-const random = computed(() => movieRandom?.value)
-
-// Добавление/удаление фильма из избранного
+// вычисляем, в избранном ли текущий фильм
 const isFavorite = computed(() => {
-  if (!random.value || !favoriteMovies.value) return false
-  return favoriteMovies.value.some((m: any) => m.id === random.value?.id)
+  if (!props.movie) return false
+  const favs = favoriteMovies.value ?? []
+  return favs.some((m: any) => m.id === props.movie.id)
 })
 
-const emit = defineEmits<{
-  (e: 'open-modal'): void,
-  (e: 'toggle-movie'): void
-}>()
-
-const openModal = () => {
-  emit('open-modal')
+// Обработчик клика: если не авторизован — просим показать модалку входа
+const handleClick = async (evt?: Event) => {
+  // предотвращаем всплытие клика (например, чтобы не открывать карточку)
+  if (evt && typeof evt.stopPropagation === 'function') evt.stopPropagation()
+  if (!isAuthorized.value) {
+    emit('open-modal')
+    return
+  }
+  if (!props.movie) return
+  // Если авторизован — вызываем toggleFavorite в сторе (add/remove)
+  try {
+    await favoriteStore.toggleFavorite(props.movie)
+    await favoriteStore.getFavoriteMovies()
+  } catch (err) {
+    console.error('Ошибка переключения избранного', err)
+    emit('error', err)
+  }
 }
-
-const toggleMovie = () => {
-  emit('toggle-movie')
-}
-
 </script>
 
 <template>
   <button
-          v-if="!isAuthorized"
-          @click="openModal"
+          @click="handleClick"
           type="button"
-          class="btn-actions">
-    <img
-         :src="isFavorite ? '/icons/liked-icon.svg' : '/icons/like-icon.svg'"
-         alt="Изменить избранное"
-         class="icon" />
-  </button>
-  <button
-          v-else
-          @click="toggleMovie"
-          type="button"
-          class="btn-actions">
+          class="btn-actions"
+          :title="isFavorite ? 'Удалить из избранного' : 'Добавить в избранное'">
     <img
          :src="isFavorite ? '/icons/liked-icon.svg' : '/icons/like-icon.svg'"
          alt="Изменить избранное"
@@ -59,4 +62,9 @@ const toggleMovie = () => {
   </button>
 </template>
 
-<style scoped></style>
+<style scoped>
+  .icon {
+    width: 28px;
+    height: 28px;
+  }
+</style>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, computed } from "vue";
+import { ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import type { IMovies } from "../types/movies";
 import { useFavoriteMoviesStore } from "../store/favoriteMoviesStore"
@@ -9,10 +9,7 @@ import { storeToRefs } from 'pinia'
 interface MovieCardProps {
   movie: IMovies,
   rank?: number,
-  showDelete?: {
-    type: Boolean,
-    default: false, // По умолчанию кнопка удаления не отображается
-  }
+  showDelete?: boolean
 }
 
 const favoriteStore = useFavoriteMoviesStore()
@@ -29,6 +26,7 @@ const router = useRouter();
 const emit = defineEmits<{
   (e: 'open'): void
   (e: 'delete'): void
+  (e: 'open-modal'): void
 }>()
 
 const openCard = () => {
@@ -38,44 +36,25 @@ const openCard = () => {
     router.push(`/movie/${props.movie.id}`);
     emit('open');
   }
-
 }
 
 // Удаляем карточку из Избранного
-const deleteCardFromFavorites = async () => {
-  if (!props.showDelete && props.showDelete != undefined)
-    try {
-      await favoriteStore.removeFavoriteMovies(props.movie.id)
-      emit('delete')
-    } catch (error) {
-      console.error('Ошибка удаления фильма из Избранного ', error)
-    }
+const deleteCardFromFavorites = async (evt?: Event) => {
+  // предотвращаем всплытие чтобы не открывать карточку
+  if (evt && typeof evt.stopPropagation === 'function') evt.stopPropagation()
+
+  // если удаление не разрешено — ничего не делаем
+  if (!props.showDelete) return
+
+  try {
+    await favoriteStore.removeFavoriteMovies(props.movie.id)
+    // обновляем список и уведомляем родителя
+    await favoriteStore.getFavoriteMovies()
+    emit('delete')
+  } catch (error) {
+    console.error('Ошибка удаления фильма из Избранного ', error)
+  }
 }
-
-// Проверяем, в избранном ли фильм
-// const isFav = computed(() => {
-//   if (!favoriteMovies.value) return false
-//   return favoriteMovies.value.some((m: any) => m.id === props.movie.id)
-// })
-
-// Тогглим избранное (добавляем/удаляем)
-// const toggleFavorite = async (evt: Event) => {
-//   evt.stopPropagation()
-//   if (!isAuthorized.value) {
-//     alert('Требуется войти в аккаунт чтобы добавить в избранное')
-//     return
-//   }
-//   try {
-//     if (isFav.value) {
-//       await favoriteStore.removeFavoriteMovies(props.movie.id)
-//     } else {
-//       await favoriteStore.addFavoriteMovies(props.movie.id)
-//     }
-//     await favoriteStore.getFavoriteMovies()
-//   } catch (err) {
-//     console.error('Failed to toggle favorite', err)
-//   }
-// }
 
 // Текущее значение src для постера — меняется при ошибке или при отсутствии posterUrl
 const currentPoster = ref(props.movie?.posterUrl ?? '/dummy_default.jpg')
@@ -104,20 +83,20 @@ const posterError = () => {
            :src="currentPoster"
            @error="posterError"
            width="221"
-           :title="movie.title"
-           :alt="movie.originalTitle"
+           :title="props.movie?.title"
+           :alt="props.movie?.originalTitle"
            class="movies__poster" />
     </div>
     <!-- Отображаем нумерацию только если index передан -->
-    <div v-if="rank !== undefined" class="top-item-label">{{ rank }}</div>
+    <div v-if="props.rank !== undefined" class="top-item-label">{{ props.rank }}</div>
     <!-- Кнопка удаления карточки из Избранного -->
     <button
-            v-if="isHovered && showDelete"
+            v-if="isHovered && props.showDelete"
             @click.stop="deleteCardFromFavorites"
             class="btn-close card-delete">
       <img
            src="/icons/x-icon.svg"
-           alt="кнопка закрыть окно" />
+           alt="Удалить" />
     </button>
   </li>
 </template>
@@ -165,7 +144,6 @@ const posterError = () => {
     left: -15px;
     z-index: 100;
     background-color: var(--main-white);
-    /* box-shadow: .3px .3px 0px 0px rgba(0, 0, 0, 0.3); */
     border: none;
     border-radius: 50px;
     padding: 8px 24px;
@@ -184,24 +162,12 @@ const posterError = () => {
     right: -15px;
     cursor: pointer;
     opacity: 0;
-  }
-
-  .card-delete:hover {
-    opacity: 1;
-  }
-
-  .btn-favorite {
-    position: absolute;
-    bottom: 8px;
-    right: 8px;
-    background: transparent;
+    background: var(--main-white);
     border: none;
-    cursor: pointer;
     padding: 6px;
   }
 
-  .btn-favorite img {
-    width: 28px;
-    height: 28px;
+  .movies__top-item:hover .card-delete {
+    opacity: 1;
   }
 </style>
