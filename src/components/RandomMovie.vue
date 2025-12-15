@@ -8,7 +8,7 @@ import { useUserStore } from '../store/userStore.ts'
 import { useFavoriteMoviesStore } from '../store/favoriteMoviesStore.ts';
 import { getRatingColor, formatRating, getTimeFormat, convertYoutubeUrl } from '../utils/movieUtils'
 import BaseButtonFavorite from './BaseButtonFavorite.vue'
-import TrailerModal from './Modals/ModalMovieTrailer.vue'
+import TrailerModal from './Modals/TrailerModal.vue'
 import BaseModal from "./BaseModal.vue";
 import BaseButtonTrailer from "./BaseButtonTrailer.vue";
 

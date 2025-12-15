@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue"
 import { storeToRefs } from "pinia"
-import TrailerModal from './Modals/ModalMovieTrailer.vue'
+import TrailerModal from './Modals/TrailerModal.vue'
 import BaseModal from "./BaseModal.vue";
 import type { IMovies } from "../types/movies";
 import { useMoviesStore } from '../store/moviesStore.ts'
