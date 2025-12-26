@@ -27,7 +27,7 @@
   --background-main-section: linear-gradient(to bottom, var(--background-header), var(--background-footer));
   --background-modal: rgba(0, 0, 0, 0.7);
   --background-card: rgba(97, 97, 97, 1);
-  ;
+
   /* Меню */
   --menu-underline: rgba(220, 93, 252, 1);
   /* Кнопки */
@@ -140,7 +140,12 @@ ul > li {
 }
 
 .hidden {
-  display: non;
+  display: none;
+}
+
+.reset {
+  margin: 0;
+  padding: 0;
 }
 
 /* Button Styles */
@@ -418,4 +423,72 @@ iframe {
   font-weight: 700;
   line-height: 1.33;
   cursor: pointer;
+}
+
+/* Movies card styles */
+.movie {
+  display: flex;
+}
+
+.movie__wrap {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 64px;
+}
+
+.movie__card {
+  display: flex;
+  flex-direction: column;
+  margin-top: 74px;
+  max-width: 680px;
+  gap: 16px;
+  font-family: Play;
+  letter-spacing: normal;
+  text-align: left;
+}
+
+.movie__info {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+
+.movie__duration,
+.movie__genre,
+.movie__year {
+  font-size: 18px;
+  line-height: 1.33;
+}
+
+.movie__desc {
+  font-size: 24px;
+  line-height: 1.33;
+  font-weight: 400;
+}
+
+.movie__title {
+  font-size: 48px;
+  font-weight: 700;
+  line-height: 1.16;
+}
+
+.movie__plot {
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1.33;
+  min-height: 100px;
+}
+
+.movie__actions {
+  display: flex;
+  gap: 16px;
+  padding-block-start: 44px;
+}
+
+.movie__poster {
+  /* flex: 1; */
+  max-width: 680px;
+  max-height: 552px;
+  overflow: hidden;
 }

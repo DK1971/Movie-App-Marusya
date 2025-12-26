@@ -1,22 +1,28 @@
 <script setup lang="ts">
-defineProps<{
+const props = defineProps<{
   modelValue: string;
   type?: string;
-  placeholder: string;
+  placeholder?: string;
 }>()
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: string): void
+  (e: 'input', ev: Event): void
+  (e: 'focus', ev: FocusEvent): void
+  (e: 'blur', ev: FocusEvent): void
 }>()
+
 
 </script>
 
 <template>
   <input
-        :value="modelValue"
-        @input="emit('update:modelValue', ($event.target as HTMLInputElement).value)"
-        :type="type ?? 'text'"
-        :placeholder="placeholder" />
+         :value="modelValue"
+         @input="(e) => { const v = (e.target as HTMLInputElement).value; emit('update:modelValue', v); emit('input', e); }"
+         @focus="(e) => emit('focus', e)"
+         @blur="(e) => emit('blur', e)"
+         :type="type ?? 'text'"
+         :placeholder="placeholder ?? ''" />
 
 </template>
 

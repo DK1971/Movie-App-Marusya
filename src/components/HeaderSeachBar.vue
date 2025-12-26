@@ -1,59 +1,85 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { storeToRefs } from "pinia"
-import type { IMovies } from "../types/movies";
 import { useMoviesStore } from '../store/moviesStore.ts'
 import { formatRating, getRatingColor, getTimeFormat } from '../utils/movieUtils'
 import BaseInput from './BaseInput.vue';
 
-interface Movie {
-  movie: IMovies
-  visible?: boolean
-}
-
-const { fetchMovieByTitle, searchQuery, clearSearch } = useMoviesStore()
-const { movieById, movieByTitle, searchTitle } = storeToRefs(useMoviesStore())
-
-const movie = computed(() => movieByTitle.value)
-
+// Поддержка v-model
+const props = defineProps<{ modelValue?: string }>()
 const emit = defineEmits<{
+  (e: 'update:modelValue', value: string): void
   (e: 'search', value: string): void
   (e: 'reset'): void
 }>()
 
-const query = ref<string>("");
-query.value = searchTitle.value;
-const results = ref<Movie[]>([]);
+// Store
+const moviesStore = useMoviesStore()
+const { fetchMovieByTitle, searchQuery, clearSearch } = moviesStore
+const { movieByTitle } = storeToRefs(moviesStore)
+
+// Локальная строка поиска (синхронизируется с modelValue)
+const query = ref<string>(props.modelValue ?? "")
+// Состояние фокуса
 const isFocused = ref<boolean>(false)
 
-// Связываем результаты с данными из стора
-const updateSearch = () => {
-  searchQuery(query.value);
-};
+// синхронизация входного prop -> локальный query
+watch(
+  () => props.modelValue,
+  (v) => {
+    query.value = v ?? ''
+  }
+)
 
+// при изменении локального query: обновляем v-model у родителя, емитим событие search и вызываем fetch в store
+watch(
+  query,
+  async (val) => {
+    emit('update:modelValue', val)
+    emit('search', val)
+    const trimmed = val.trim()
+    if (trimmed.length > 0) {
+      await fetchMovieByTitle(trimmed)
+    } else {
+      // очистка результатов, если строка пуста
+      clearSearch()
+    }
+  }
+)
+
+
+// При изменении локального запроса — обновляем v-model, стор и вызываем поиск
+watch(query, (val) => {
+  emit('update:modelValue', val)
+  searchQuery(val)
+  emit('search', val)
+  if (!val) {
+    clearSearch()
+  }
+})
 
 const handleInput = async () => {
-  if (query.value.length > 0) {
-    await fetchMovieByTitle(query.value.trim())
+  const val = query.value.trim()
+  if (val.length > 0) {
+    await fetchMovieByTitle(val)
   }
 }
 
-const handleBlur = () => {
-  // Задержка нужна, чтобы успел сработать клик по результату или кнопке сброса
-  setTimeout(() => {
-    isFocused.value = false;
-  }, 200);
-};
-
+// Сброс поиска (кнопка X)
 const inputReset = () => {
-  emit('reset')
   query.value = ""
-  results.value = []
+  clearSearch()
+  emit('reset')
 }
 
-watch(query, (val) => {
-  emit('search', val)
-})
+const handleBlur = () => {
+  // Небольшая задержка, чтобы обработать клик по результату или по reset
+  setTimeout(() => {
+    isFocused.value = false
+  }, 200)
+}
+
+
 </script>
 
 <template>
@@ -61,7 +87,7 @@ watch(query, (val) => {
     <form class="form" @submit.prevent>
       <!-- Поле ввода input для поиска по фильмам -->
       <BaseInput
-                 v-model.trim="query"
+                 v-model="query"
                  @input="handleInput"
                  @focus="isFocused = true"
                  @blur="handleBlur"
@@ -77,31 +103,35 @@ watch(query, (val) => {
              alt="Очистить строку поиска" />
       </button>
     </form>
-    <div
-         v-if="isFocused && query.length > 0" class="search-bar__window">
+    <div v-if="isFocused && query.length > 0" class="search-bar__window">
       <!-- Блок результата поисков -->
       <ul class="search-bar__list">
         <!-- Элемент результата поиска -->
-        <li class="search-bar__item">
-          <router-link to="`/movie/${item.id}`">
+        <li
+            v-for="item in movieByTitle ?? []"
+            :key="item.id"
+            class="search-bar__item">
+          <router-link
+                       :to="`/movie/${item.id}`"
+                       @click="isFocused = false">
             <div class="movie">
               <div class="movie__poster search-bar__poster">
                 <img
-                     :src="movie?.posterUrl ?? '/public/dummy_default.jpg'"
+                     :src="item?.posterUrl ?? '/dummy_default.jpg'"
                      alt="Изображение фильма"
                      class="img-poster" />
               </div>
               <div class="movie__wrap reset">
                 <div class="movie__info">
-                  <div :class="`rating-label ${getRatingColor(movie?.tmdbRating)}`">
-                    <span class="rating-value">{{ formatRating(movie?.tmdbRating) }}</span>
+                  <div :class="`rating-label ${getRatingColor(item?.tmdbRating)}`">
+                    <span class="rating-value">{{ formatRating(item?.tmdbRating) }}</span>
                   </div>
-                  <p class="movie__year"> {{ movie?.releaseYear }} </p>
-                  <p class="movie__genre">{{ movie?.genres?.join(', ') || 'Нет данных' }}</p>
-                  <p class="movie__duration">{{ getTimeFormat(movie?.runtime) }}</p>
+                  <p class="movie__year"> {{ item?.releaseYear }} </p>
+                  <p class="movie__genre">{{ item?.genres?.join(', ') || 'Нет данных' }}</p>
+                  <p class="movie__duration">{{ getTimeFormat(item?.runtime) }}</p>
                 </div>
                 <h1 class="movie__title">
-                  {{ movie?.title }}
+                  {{ item?.title }}
                 </h1>
               </div>
             </div>
