@@ -2,12 +2,15 @@
 import { ref } from 'vue'
 import { useUserStore } from '../store/userStore.ts'
 import { useFavoriteMoviesStore } from '../store/favoriteMoviesStore.ts'
+import type { IUser } from "../types/auth.ts";
+import { validateEmail } from '../utils/modalFormUtils.ts';
 import ModalLogIn from './Modals/ModalLogIn.vue'
 import ModalReg from './Modals/ModalReg.vue'
 import ModalRegCreated from './Modals/ModalRegCreated.vue'
 
 const userStore = useUserStore()
 const favoriteStore = useFavoriteMoviesStore()
+// const { user, isAuthorized, isRegCompleted } = storeToRefs(userStore)
 
 interface ModalProps {
   modalType: 'login' | 'register' | 'complete',
@@ -42,25 +45,23 @@ const handleLogin = async (payload?: { email: string; password: string }) => {
   }
   try {
     const res = await userStore.loginUser(payload as any)
-    if (res && res.success) {
-      // loginUser уже сохранил token и user в сторе через persistAuth
+    if (res) {
+      // loginUser уже сохраняет token и user в хранилище через persistAuth
+      // Загрузим избранное пользователя
       try { await favoriteStore.getFavoriteMovies() } catch (error) { /* ignore */ }
       // Закрываем модалку
       closeModal()
-    } else {
-      // В случае ошибки — не пробрасываем исключение, оставляем модалку открытой
-      console.warn('Login failed:', res?.message)
-      // userStore.error содержит текст ошибки и ModalLogIn отображает store.error
     }
   } catch (error) {
-    // На всякий случай — логируем, но не пробрасываем дальше
-    console.error('Авторизация не прошла (uncaught):', error)
+    console.error('Авторизация не прошла', error)
+    throw error
   }
 }
 
 // Переключение между модалками
 const switchToModal = (modalType: 'login' | 'register' | 'complete') => {
   currentModal.value = modalType
+  // Опционально: эмитим событие родителю для синхронизации
   emit('update-modal-type', modalType)
 }
 
@@ -71,19 +72,21 @@ const handleFinishRegister = async (payload?: { name: string; surname: string; e
       switchToModal('complete')
       return
     }
+    // Вызываем регистрацию через store
     const res = await userStore.registerUser(payload as any)
-    if (res && res.success) {
-      // После успешной регистрации показываем экран завершения
-      switchToModal('complete')
+    // После успешной регистрации показываем экран завершения
+    switchToModal('complete')
+    // можно пометить флаг завершения
+    try {
+      // устанавливаем маркер в сторе, если он нужен
       userStore.isRegCompleted = true
-    } else {
-      console.warn('Registration failed:', res?.message)
-      // userStore.error содержит текст ошибки для UI
+    } catch (error) {
+      console.error('Registration failed ', error)
     }
     return res
   } catch (error) {
-    console.error('Registration failed (uncaught):', error)
-    // не пробрасываем дальше
+    console.error('Registration failed ', error)
+    throw error
   }
 }
 
@@ -119,6 +122,7 @@ const getModalComponent = () => {
                      :is="getModalComponent()"
                      @switch-to-register="switchToModal('register')"
                      @switch-to-login="switchToModal('login')"
+                     @swith-to-complete="switchToModal('complete')"
                      @complete="handleFinishRegister"
                      @login="handleLogin" />
         </div>

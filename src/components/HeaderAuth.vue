@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref } from 'vue'
 import { storeToRefs } from 'pinia'
+import type { IUser } from "../types/auth.ts";
 import { useUserStore } from '../store/userStore.ts'
 
-const userStore = useUserStore()
-const { isAuthorized, user } = storeToRefs(userStore)
 
-// реактивно вычисляем имя пользователя
-const userName = computed(() => {
-  return user.value?.name || 'Пользователь'
-})
+const userStore = useUserStore()
+const { isAuthorized } = storeToRefs(userStore)
+
+const userName = ref<string | undefined>('')
+userName.value = userStore.user?.name
 
 const emit = defineEmits<{
   (e: 'open-modal'): void

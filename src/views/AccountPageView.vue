@@ -114,7 +114,11 @@ onMounted(async () => {
                class="favorites-section">
 
         <ul v-if="favorites" class="favorites__list">
-          <FavoriteMovies />
+          <FavoriteMovies
+                          :movie="movieProps.movie"
+                          :movies="favorites"
+                          :showIndex="false"
+                          :showDelete?="true" />
         </ul>
 
         <p v-else class="section-desc">В Избранном нет сохранённых фильмов или они не отображаются на странице!</p>

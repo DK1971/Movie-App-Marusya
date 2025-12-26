@@ -12,9 +12,8 @@ import TrailerModal from './Modals/TrailerModal.vue'
 import BaseModal from "./BaseModal.vue";
 import BaseButtonTrailer from "./BaseButtonTrailer.vue";
 
-const moviesStore = useMoviesStore()
-const { getMoviesByRandom } = moviesStore
-const { movieRandom } = storeToRefs(moviesStore)
+const { getMoviesByRandom } = useMoviesStore()
+const { movieRandom } = storeToRefs(useMoviesStore())
 
 const favoriteStore = useFavoriteMoviesStore()
 const { favoriteMovies } = storeToRefs(favoriteStore)
@@ -22,17 +21,7 @@ const { favoriteMovies } = storeToRefs(favoriteStore)
 const userStore = useUserStore()
 const { isAuthorized } = storeToRefs(userStore)
 
-const randomMovie = computed<IMovies | null>(() => movieRandom.value ?? null)
-
-// Определяем видимость модальных окнон
-const isTrailerModalVisible = ref(false)
-const isModalVisible = ref(false)
-
-const toggleModalVisible = () => {
-  isModalVisible.value = !isModalVisible.value
-}
-
-const trailerUrl = ref("")
+const randomMovie = computed(() => movieRandom?.value);
 
 const router = useRouter();
 
@@ -47,7 +36,10 @@ interface MovieProps {
 
 const movieProps = defineProps<MovieProps>()
 
-// Открытие страницы с подробной информацией о фильме
+// Получаем ID случайного фильма для открытия карточки фильма 
+const movieID = ref<number>()
+movieID.value = randomMovie.value?.id
+
 const openCard = () => {
   console.log('Открываем карточку фильма с ID: ', movieProps.movie?.id);
   // Навигируем на страницу деталей фильма по ID
@@ -78,6 +70,18 @@ const openModal = () => {
   emit('open-modal')
 }
 
+// Управление открытием/закрытием модального окна
+// Определяем видимость
+const isModalVisible = ref<boolean>(false);
+const isTrailerModalVisible = ref<boolean>(false)
+
+const toggleModalVisible = () => {
+  isModalVisible.value = !isModalVisible.value
+}
+
+// Задаем переменные и методы для открытия модального окна для просмотра трейлера
+const trailerUrl = ref<string>('')
+
 // Метод для открытия модального окна с переданным URL трейлера
 const openTrailerModal = () => {
   console.log('=== ОТКРЫТО МОДАЛЬНОЕ ОКНО ТРЕЙЛЕРА ===');
@@ -102,7 +106,7 @@ const openTrailerModal = () => {
   const convertedUrl = convertYoutubeUrl(randomMovie.value.trailerUrl);
   console.log('🔄 Преобразованный URL:', convertedUrl);
 
-  // ✅ Проверяем наличие URL
+  // ✅ КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: убираем строгую проверку, просто проверяем наличие URL
   if (convertedUrl && convertedUrl.trim()) {
     trailerUrl.value = convertedUrl;
     isTrailerModalVisible.value = true;
@@ -112,6 +116,7 @@ const openTrailerModal = () => {
     console.error('❌ convertedUrl пуст или invalid');
   }
 };
+
 
 // Метод для закрытия модального окна
 const closeTrailerModal = () => {
@@ -162,21 +167,21 @@ onMounted(async () => {
 <template>
   <div class="movies__random-wrap">
     <div class="movies__card">
-      <div class="movies__info">
+      <div class="movie__info">
         <div :class="`rating-label ${getRatingColor(randomMovie?.tmdbRating)}`">
           <span class="rating-value">{{ formatRating(randomMovie?.tmdbRating) }}</span>
         </div>
-        <p class="movies__year"> {{ randomMovie?.releaseYear }} </p>
-        <p class="movies__genre">{{ randomMovie?.genres?.join(', ') || 'Нет данных' }}</p>
-        <p class="movies__duration">{{ getTimeFormat(randomMovie?.runtime) }}</p>
+        <p class="movie__year"> {{ randomMovie?.releaseYear }} </p>
+        <p class="movie__genre">{{ randomMovie?.genres?.join(', ') || 'Нет данных' }}</p>
+        <p class="movie__duration">{{ getTimeFormat(randomMovie?.runtime) }}</p>
       </div>
-      <h1 class="movies__title">
+      <h1 class="movie__title">
         {{ randomMovie?.title }}
       </h1>
-      <p class="movies__desc">
+      <p class="movie__desc">
         {{ randomMovie?.plot }}
       </p>
-      <div class="movies__actions">
+      <div class="movie__actions">
         <BaseButtonTrailer
                            :url="randomMovie?.trailerUrl"
                            @open="openTrailerModal" />
@@ -187,8 +192,6 @@ onMounted(async () => {
           О фильме
         </button>
         <BaseButtonFavorite
-                            v-if="randomMovie"
-                            :movie="randomMovie"
                             @click="toggleFavoriteMovie"
                             @open-modal="openModal" />
         <button
@@ -211,7 +214,7 @@ onMounted(async () => {
                 :trailer-url="trailerUrl"
                 @close="closeTrailerModal" />
   <BaseModal
-             :modalType="'login'"
+             :modal-type="movieProps.modalType"
              :visible="isModalVisible"
              @close="toggleModalVisible" />
 </template>
@@ -233,7 +236,7 @@ onMounted(async () => {
     text-align: left;
   }
 
-  .movies__info {
+  .movie__info {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -259,7 +262,7 @@ onMounted(async () => {
   }
 
   .movies__random-img {
-    /* flex: 1; */
+    flex: 1;
     max-width: 680px;
     max-height: 552px;
     overflow: hidden;

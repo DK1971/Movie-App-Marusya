@@ -1,31 +1,30 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useUserStore } from '../../store/userStore.ts'
+import { ref } from 'vue'
 
-const userStore = useUserStore()
 
 const email = ref('')
 const password = ref('')
 const isLoading = ref(false)
-// локальная ошибка теперь может отображать store.error, но можно иметь локальную для валидации
-const localError = ref('')
+const error = ref('')
 
 const emit = defineEmits<{
   (e: 'switch-to-register'): void,
-  (e: 'login', credentials?: { email: string, password: string }): void
+  (e: 'login', credentials: { email: string, password: string }): void
 }>()
 
 const handleLogin = async () => {
-  localError.value = ''
   if (!email.value || !password.value) {
-    localError.value = 'Заполните все поля'
+    error.value = 'Заполните все поля'
     return
   }
   isLoading.value = true
   try {
-    // вызываем родительский обработчик через emit — родитель вернёт результат в store
+    // TODO: Добавить реальный запрос к API
+    // await loginAPI(email.value, password.value)
+    console.log('Попытка входа в систему: ', { email: email.value, password: password.value })
     emit('login', { email: email.value, password: password.value })
   } catch (err) {
+    error.value = 'Ошибка при входе'
     console.error(err)
   } finally {
     isLoading.value = false
@@ -35,19 +34,15 @@ const handleLogin = async () => {
 const handleSwitchToRegister = () => {
   email.value = ''
   password.value = ''
-  localError.value = ''
+  error.value = ''
   emit('switch-to-register')
 }
-
-// computed для отображения ошибки из store, если есть
-const serverError = computed(() => userStore.error)
 
 </script>
 
 <template>
   <form class="modal__content-wrapper" @submit.prevent="handleLogin">
-    <div v-if="localError" class="modal__error">{{ localError }}</div>
-    <div v-else-if="serverError" class="modal__error">{{ serverError }}</div>
+    <div v-if="error" class="modal__error">{{ error }}</div>
     <input
            v-model="email"
            id="email"

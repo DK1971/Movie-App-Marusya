@@ -1,5 +1,18 @@
 <script setup lang="ts">
-import BaseInput from './BaseInput.vue';
+import { storeToRefs } from "pinia"
+import HeaderSeachBar from './HeaderSeachBar.vue';
+import { useMoviesStore } from '../store/moviesStore.ts'
+
+const { searchTitle } = storeToRefs(useMoviesStore())
+
+const onSearch = (value: string) => {
+  console.log('search:', value)
+  // store action
+}
+
+const onReset = () => {
+  console.log('reset')
+}
 
 </script>
 
@@ -7,18 +20,17 @@ import BaseInput from './BaseInput.vue';
   <div class="header__menu">
     <!-- Link to Home Page -->
     <router-link to="/" class="menu-item">
-      <a>Главная</a>
+      Главная
     </router-link>
     <!-- Link to Genres Page -->
     <router-link to="/Genres" class="menu-item">
-      <a>Жанры</a>
+      Жанры
     </router-link>
-
-    <BaseInput
-               type="text"
-               class="header__input"
-               id="input"
-               placeholder="Поиск" />
+    <!-- Строка поиска фильмов и блок результата поисков -->
+    <HeaderSeachBar
+                    v-model="searchTitle"
+                    @search="onSearch"
+                    @reset="onReset" />
   </div>
 </template>
 
@@ -60,29 +72,7 @@ import BaseInput from './BaseInput.vue';
     transform: scaleX(1);
   }
 
-  .header__input {
-    position: relative;
-    width: 100%;
-    padding-inline: 52px 16px;
-    padding-block: 16px;
-    color: var(--main-white);
-    font-size: 18px;
-    border: none;
-    border-radius: 8px;
-    background-color: var(--background-gray-primary);
-    background-image: url('../assets/icons/search.svg');
-    background-repeat: no-repeat;
-    background-position: center left 16px;
-  }
 
-  .header__input::placeholder {
-    font-size: 18px;
-    /* padding-left: 30px; */
-  }
-
-  .header__input:active {
-    background-image: none;
-  }
 
   @media (max-width: 1280px) {
     .header__menu {
