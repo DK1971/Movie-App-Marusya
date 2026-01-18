@@ -1,66 +1,135 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed, watch } from 'vue'
+
+// Props для получения ошибок и состояния загрузки из родительского компонента
+interface Props {
+       error?: string | null
+       isLoading?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+       error: null,
+       isLoading: false
+})
 
 const name = ref('')
 const surname = ref('')
 const email = ref('')
 const password = ref('')
 const confirmPassword = ref('')
-const isLoading = ref<boolean>(false)
-const error = ref<string>('')
+const localError = ref<string>('')
+
+// Комбинированная ошибка (локальная валидация + ошибка от API)
+const displayError = computed(() => {
+       // Приоритет: сначала локальная ошибка валидации, затем ошибка от API
+       return localError.value || props.error || ''
+})
+
+// Следим за изменением ошибки от API и сбрасываем локальную ошибку при переключении
+watch(() => props.error, (newError) => {
+       if (newError) {
+              localError.value = ''
+       }
+})
 
 const emit = defineEmits<{
        (e: 'switch-to-login'): void,
        (e: 'switch-to-complete'): void,
-       (e: 'complete', data: { name: string, surname: string, email: string, password: string }): void
+       (e: 'complete', data: {
+              name: string,
+              surname: string,
+              email: string,
+              password: string
+       }): void
 }>()
 
+// Валидация email
+const validateEmail = (email: string): boolean => {
+       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+       return emailRegex.test(email)
+}
+
+// Валидация формы
+const validateForm = (): boolean => {
+       localError.value = ''
+
+       // Проверка заполненности полей
+       if (!email.value || !name.value || !surname.value || !password.value || !confirmPassword.value) {
+              localError.value = 'Заполните все поля'
+              return false
+       }
+
+       // Валидация email
+       if (!validateEmail(email.value)) {
+              localError.value = 'Некорректный email адрес'
+              return false
+       }
+
+       // Проверка длины пароля
+       if (password.value.length < 6) {
+              localError.value = 'Пароль должен содержать минимум 6 символов'
+              return false
+       }
+
+       // Проверка совпадения паролей
+       if (password.value !== confirmPassword.value) {
+              localError.value = 'Пароли не совпадают'
+              return false
+       }
+
+       return true
+}
+
 const handleRegister = async () => {
-       isLoading.value = true;
+       // Валидация формы перед отправкой
+       if (!validateForm()) {
+              return
+       }
+
+       localError.value = ''
+
        try {
-              console.log('При регистрации добавлено:', {
+              console.log('Регистрация пользователя:', {
                      name: name.value,
                      surname: surname.value,
                      email: email.value,
                      password: password.value
               })
-              emit('complete', { name: name.value, surname: surname.value, email: email.value, password: password.value })
-              handleSwitchToComplete()
 
+              // Эмитим событие с данными для регистрации
+              emit('complete', {
+                     name: name.value,
+                     surname: surname.value,
+                     email: email.value,
+                     password: password.value
+              })
        } catch (err) {
-              error.value = 'Ошибка при регистрации'
-              console.error(error.value + ' : ' + err)
-       } finally {
-              isLoading.value = false
+              localError.value = 'Ошибка при регистрации'
+              console.error('Registration error:', err)
        }
 }
 
-const handleSwitchToComplete = () => {
+const clearForm = () => {
        name.value = ''
        surname.value = ''
        email.value = ''
        password.value = ''
        confirmPassword.value = ''
-       error.value = ''
-       emit('switch-to-complete')
-       console.log("Switch to complete");
+       localError.value = ''
 }
 
 const handleSwitchToLogin = () => {
-       name.value = ''
-       surname.value = ''
-       email.value = ''
-       password.value = ''
-       confirmPassword.value = ''
-       error.value = ''
+       clearForm()
        emit('switch-to-login')
 }
+
+
 
 </script>
 
 <template>
        <form class="modal__content-wrapper" @submit.prevent="handleRegister">
-              <div v-if="error" class="modal__error">{{ error }}</div>
+              <div v-if="displayError" class="modal__error">{{ displayError }}</div>
               <input
                      v-model="email"
                      id="email"
@@ -99,8 +168,8 @@ const handleSwitchToLogin = () => {
               <button
                       type="submit"
                       class="modal__btn-enter"
-                      :disabled="isLoading">
-                     Создать аккаунт
+                      :disabled="props.isLoading">
+                     {{ props.isLoading ? 'Создание...' : 'Создать аккаунт' }}
               </button>
               <!-- Переход на другое модальное окно -->
               <p @click="handleSwitchToLogin" class="link-register">У меня есть пароль</p>

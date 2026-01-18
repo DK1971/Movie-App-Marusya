@@ -11,7 +11,10 @@ export const useFavoriteMoviesStore = defineStore("favoriteMovies", () => {
   // actions
   // Информирует пользователя об ошибке
   const handleError = (error: any) => {
-    console.error("Ошибка запроса: ", error);
+    const message =
+      error.response?.data?.message || error.message || "Ошибка запроса";
+    error.value = message;
+    console.log(message);
   };
 
   // Проверяем, является ли фильм в списке избранных
@@ -49,7 +52,7 @@ export const useFavoriteMoviesStore = defineStore("favoriteMovies", () => {
       console.log("Удаляем фильм в избранное");
       // Обновляем список после удаления
       favoriteMovies.value = favoriteMovies.value?.filter(
-        (movie: IMovies) => movie.id !== movieId
+        (movie: IMovies) => movie.id !== movieId,
       );
       await getFavoriteMovies();
     } catch (error) {

@@ -55,7 +55,7 @@ const changeRandomMovie = async () => {
     await getMoviesByRandom()
     console.log('Случайный фильм после клика кнопки: ', movieRandom.value)
   } catch (error) {
-    console.error('Ошибка при получении случайного фильма: ', error)
+    console.log('Ошибка при получении случайного фильма: ', error)
   }
 }
 
@@ -106,12 +106,12 @@ const openTrailerModal = () => {
   const convertedUrl = convertYoutubeUrl(randomMovie.value.trailerUrl);
   console.log('🔄 Преобразованный URL:', convertedUrl);
 
-  // ✅ КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: убираем строгую проверку, просто проверяем наличие URL
+  // ✅ Проверяем наличие URL
   if (convertedUrl && convertedUrl.trim()) {
     trailerUrl.value = convertedUrl;
     isTrailerModalVisible.value = true;
     console.log('✅ Модал ОТКРЫТ с URL:', trailerUrl.value);
-    console.log('✅ isTrailerModalVisible. value =', isTrailerModalVisible.value);
+    console.log('✅ isTrailerModalVisible.value = ', isTrailerModalVisible.value);
   } else {
     console.error('❌ convertedUrl пуст или invalid');
   }
@@ -144,7 +144,7 @@ const toggleFavoriteMovie = async () => {
     }
     await favoriteStore.getFavoriteMovies()
   } catch (error) {
-    console.error('Добавление/удаление фильма в/из избранного', error)
+    console.log('Ошибка добавленяе/удаления фильма в/из избранного: ', error)
   }
 }
 
@@ -192,8 +192,8 @@ onMounted(async () => {
           О фильме
         </button>
         <BaseButtonFavorite
-                            @click="toggleFavoriteMovie"
-                            @open-modal="openModal" />
+                            @open-modal="openModal"
+                            @toggle-movie="toggleFavoriteMovie" />
         <button
                 @click="changeRandomMovie"
                 type="button"
@@ -227,6 +227,7 @@ onMounted(async () => {
 
   .movies__card {
     display: flex;
+    flex: 1;
     flex-direction: column;
     margin-top: 74px;
     max-width: 680px;

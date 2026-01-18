@@ -1,93 +1,106 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
-import { storeToRefs } from "pinia"
-import { useMoviesStore } from '../store/moviesStore.ts'
-import { formatRating, getRatingColor, getTimeFormat } from '../utils/movieUtils'
-import BaseInput from './BaseInput.vue';
+import { ref, computed, watch } from "vue";
+import { storeToRefs } from "pinia";
+import { useRoute, useRouter } from "vue-router";
+import { useMoviesStore } from "../store/moviesStore.ts";
+import BaseInput from "./BaseInput.vue";
+import MovieInSearchBar from "./MovieInSearchBar.vue";
 
-// Поддержка v-model
-const props = defineProps<{ modelValue?: string }>()
+// Инициализируем роутер и стор фильмов один раз
+const router = useRouter();
+const route = useRoute();
+const moviesStore = useMoviesStore();
+
+// Получаем экшены и реактивные данные из стора
+const { getMoviesByTitle, searchQuery, clearSearch } = moviesStore;
+const { movieByTitle, searchTitle } = storeToRefs(moviesStore);
+
+// Эмитим событие при открытии фильма (для закрытия модального окна в мобильной версии)
 const emit = defineEmits<{
-  (e: 'update:modelValue', value: string): void
-  (e: 'search', value: string): void
-  (e: 'reset'): void
-}>()
+  (e: 'open-movie'): void;
+}>();
 
-// Store
-const moviesStore = useMoviesStore()
-const { fetchMovieByTitle, searchQuery, clearSearch } = moviesStore
-const { movieByTitle } = storeToRefs(moviesStore)
+// Локальное состояние строки поиска и фокуса инпута
+const query = ref<string>(searchTitle.value || "");
+const isFocused = ref<boolean>(false);
 
-// Локальная строка поиска (синхронизируется с modelValue)
-const query = ref<string>(props.modelValue ?? "")
-// Состояние фокуса
-const isFocused = ref<boolean>(false)
+// Проверка, что в строке поиска есть минимум 2 символа
+const hasMinChars = computed(() => query.value.trim().length >= 2);
 
-// синхронизация входного prop -> локальный query
-watch(
-  () => props.modelValue,
-  (v) => {
-    query.value = v ?? ''
-  }
-)
+// Проверяем, есть ли результаты поиска
+const hasResults = computed(
+  () => (movieByTitle.value?.length ?? 0) > 0
+);
 
-// при изменении локального query: обновляем v-model у родителя, емитим событие search и вызываем fetch в store
-watch(
-  query,
-  async (val) => {
-    emit('update:modelValue', val)
-    emit('search', val)
-    const trimmed = val.trim()
-    if (trimmed.length > 0) {
-      await fetchMovieByTitle(trimmed)
-    } else {
-      // очистка результатов, если строка пуста
-      clearSearch()
-    }
-  }
-)
-
-
-// При изменении локального запроса — обновляем v-model, стор и вызываем поиск
-watch(query, (val) => {
-  emit('update:modelValue', val)
-  searchQuery(val)
-  emit('search', val)
-  if (!val) {
-    clearSearch()
-  }
-})
-
+// Обработчик ввода в поле поиска
 const handleInput = async () => {
-  const val = query.value.trim()
-  if (val.length > 0) {
-    await fetchMovieByTitle(val)
+  const text = query.value.trim();
+
+  // Сохраняем текущий текст в стор (searchTitle)
+  searchQuery(text);
+
+  // Если меньше 2 символов — не ищем и очищаем результаты
+  if (text.length < 2) {
+    clearSearch();
+    return;
   }
-}
 
-// Сброс поиска (кнопка X)
-const inputReset = () => {
-  query.value = ""
-  clearSearch()
-  emit('reset')
-}
+  // Разрешаем только английские буквы и цифры
+  const isValidQuery = /^[A-Za-z0-9]+$/.test(text);
+  if (!isValidQuery) {
+    clearSearch();
+    return;
+  }
 
+  // Делаем запрос к API через стор
+  await getMoviesByTitle(text);
+};
+
+// Потеря фокуса: чуть откладываем, чтобы успел сработать клик по карточке
 const handleBlur = () => {
-  // Небольшая задержка, чтобы обработать клик по результату или по reset
   setTimeout(() => {
-    isFocused.value = false
-  }, 200)
-}
+    isFocused.value = false;
+  }, 200);
+};
 
+// Переход на страницу выбранного фильма
+const openMovieCard = (movieId: number | string) => {
+  // Сразу очищаем поле поиска и результаты
+  query.value = "";
+  isFocused.value = false;
+  clearSearch();
 
+  // Эмитим событие для закрытия модального окна в мобильной версии
+  emit('open-movie');
+
+  router.push(`/movie/${movieId}`);
+};
+
+// Очистка строки поиска и результатов
+const inputReset = () => {
+  query.value = "";
+  clearSearch();
+};
+
+// Очистка поиска при любом переходе на другую страницу/вкладку (смена маршрута)
+watch(
+  () => route.fullPath,
+  () => {
+    query.value = "";
+    isFocused.value = false;
+    clearSearch();
+  }
+);
 </script>
 
 <template>
   <div class="search-bar">
-    <form class="form" @submit.prevent>
+    <form
+          class="form"
+          @submit.prevent>
       <!-- Поле ввода input для поиска по фильмам -->
       <BaseInput
-                 v-model="query"
+                 v-model.trim="query"
                  @input="handleInput"
                  @focus="isFocused = true"
                  @blur="handleBlur"
@@ -103,41 +116,30 @@ const handleBlur = () => {
              alt="Очистить строку поиска" />
       </button>
     </form>
-    <div v-if="isFocused && query.length > 0" class="search-bar__window">
-      <!-- Блок результата поисков -->
-      <ul class="search-bar__list">
-        <!-- Элемент результата поиска -->
-        <li
-            v-for="item in movieByTitle ?? []"
-            :key="item.id"
-            class="search-bar__item">
-          <router-link
-                       :to="`/movie/${item.id}`"
-                       @click="isFocused = false">
-            <div class="movie">
-              <div class="movie__poster search-bar__poster">
-                <img
-                     :src="item?.posterUrl ?? '/dummy_default.jpg'"
-                     alt="Изображение фильма"
-                     class="img-poster" />
-              </div>
-              <div class="movie__wrap reset">
-                <div class="movie__info">
-                  <div :class="`rating-label ${getRatingColor(item?.tmdbRating)}`">
-                    <span class="rating-value">{{ formatRating(item?.tmdbRating) }}</span>
-                  </div>
-                  <p class="movie__year"> {{ item?.releaseYear }} </p>
-                  <p class="movie__genre">{{ item?.genres?.join(', ') || 'Нет данных' }}</p>
-                  <p class="movie__duration">{{ getTimeFormat(item?.runtime) }}</p>
-                </div>
-                <h1 class="movie__title">
-                  {{ item?.title }}
-                </h1>
-              </div>
-            </div>
-          </router-link>
-        </li>
+
+    <!-- Окно с результатами  -->
+    <div
+         v-if="isFocused && hasMinChars"
+         class="search-bar__window">
+      <!-- Если есть результаты поиска — показываем список найденных фильмов -->
+      <ul
+          v-if="hasResults"
+          class="search-bar__list">
+        <MovieInSearchBar
+                          v-for="movie in movieByTitle || []"
+                          :key="movie.id"
+                          :movie="movie"
+                          @open-movie="openMovieCard" />
       </ul>
+
+      <!-- Если результатов нет (в том числе из-за неверного ввода) => сообщение "Фильм не найден!"  -->
+      <div
+           v-else
+           class="search-bar__list">
+        <div class="search-bar__empty">
+          Фильм не найден!
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -157,7 +159,6 @@ const handleBlur = () => {
 
   .input-reset {
     position: absolute;
-    /* display: none; */
     right: 20px;
     padding-inline: 0;
     opacity: 0.5;
@@ -174,27 +175,45 @@ const handleBlur = () => {
 
   .search-bar__window {
     position: absolute;
+    z-index: 100;
     top: 70px;
     right: 0;
   }
 
   .search-bar__list {
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     width: 560px;
     height: auto;
     padding: 8px;
+    border-radius: 8px;
     background-color: var(--background-gray-primary);
   }
 
-  .search-bar__item {
-    padding-block: 20px;
-    padding-inline: 8px;
+  /* Адаптивные стили для мобильной версии */
+  @media (max-width: 768px) {
+    .search-bar__window {
+      position: relative;
+      top: 0;
+      right: 0;
+      margin-top: 16px;
+    }
+
+    .search-bar__list {
+      width: 100%;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+  }
+
+  .search-bar__empty {
+    padding-block: 30px;
+    padding-inline: 20px;
     width: 100%;
-    height: 92px;
-    border: 1px solid var(--main-white, rgba(255, 255, 255, 0.5));
-    border-radius: 6px;
+    height: 90px;
+    border: 1px solid transparent;
     background-color: inherit;
+    text-align: center;
   }
 
   .search-bar__poster {

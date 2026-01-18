@@ -20,18 +20,24 @@ export const useMoviesStore = defineStore("movies", () => {
   // переменная для хранения ошибок
   const error = ref<string | null>(null);
 
-  // Информирует пользователя об ошибке
   // --- HELPERS ---
+  // Информирует пользователя об ошибке
   const setError = (err: any) => {
     const message = err.response?.data?.message || err.message || "Ошибка API";
     error.value = message;
-    console.error(message);
+    console.log(message);
   };
 
+  // Сбрасываем ошибку
+  const clearError = () => {
+    error.value = null;
+  };
+
+  // --- ACTIONS ---
   // Получаем ВСЕ фильмы или с опциональными параметрами (например { genre, title })
   const getMovies = async (params?: Record<string, any>): Promise<void> => {
     isLoading.value = true;
-    error.value = null; // Сбрасываем ошибку перед запросом
+    clearError(); // Сбрасываем ошибку перед запросом
     try {
       const { data } = await CINEMA_API.get<IMovies[]>("/movie", { params });
       movies.value = data;
@@ -99,7 +105,7 @@ export const useMoviesStore = defineStore("movies", () => {
     }
   };
 
-  // Вызывается при вводе текста в поле поиска и сохраняет его в searchText
+  // Вызывается при вводе текста в поле поиска и сохраняет его в searchTitle
   const searchQuery = (query: string) => {
     searchTitle.value = query;
     // console.log(searchTitle.value);
@@ -111,15 +117,23 @@ export const useMoviesStore = defineStore("movies", () => {
   };
 
   // Получаем фильмы по названию (API поиск)
-  const fetchMovieByTitle = async (query: string) => {
+  const getMoviesByTitle = async (query: string) => {
     if (!query) return;
     isSearchLoading.value = true;
     try {
       const { data } = await CINEMA_API.get<IMovies[]>(`/movie`, {
         params: { title: query },
       });
-      // Ограничение вывода фильмов до 5 элементов
-      movieByTitle.value = data.slice(0, 5);
+
+      // Сначала сортируем фильмы по рейтингу tmdbRating по убыванию,
+      // затем ограничиваем список первыми 5 элементами
+      const sortedByRating = [...data].sort((a, b) => {
+        const ratingA = a.tmdbRating ?? 0;
+        const ratingB = b.tmdbRating ?? 0;
+        return ratingB - ratingA;
+      });
+
+      movieByTitle.value = sortedByRating.slice(0, 5);
     } catch (err) {
       setError(err);
     } finally {
@@ -127,12 +141,12 @@ export const useMoviesStore = defineStore("movies", () => {
     }
   };
 
-  // Обёртка для получения фильмов по жанру (сохраняет backward compatibility)
+  // Обёртка для получения фильмов по жанру
   const getMoviesByGenre = async (genre: string) => {
     return await getMovies({ genre });
   };
 
-  // getters
+  // --- GETTERS ---
   // проверка наличия полученных фильмов
   const hasMovies = computed(() => movies.value?.length);
 
@@ -142,11 +156,11 @@ export const useMoviesStore = defineStore("movies", () => {
     if (query.length < 2) return movies.value;
 
     return movies.value.filter((movie) =>
-      movie.title.toLowerCase().includes(query)
+      movie.title.toLowerCase().includes(query),
     );
   });
 
-  // Возвращает все необходимые данные и методы
+  // Возвращает все необходимые данные и экшены
   return {
     movies,
     genres,
@@ -161,13 +175,14 @@ export const useMoviesStore = defineStore("movies", () => {
     hasMovies,
     filteredMovies,
     setError,
+    clearError,
     getMovies,
     getTopMovies,
     getMoviesByRandom,
     getMoviesByGenres,
     getMoviesByGenre,
     getMovieById,
-    fetchMovieByTitle,
+    getMoviesByTitle,
     clearSearch,
     searchQuery,
   };

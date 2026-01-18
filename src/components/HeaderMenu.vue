@@ -72,11 +72,9 @@ const onReset = () => {
     transform: scaleX(1);
   }
 
-
-
   @media (max-width: 1280px) {
-    .header__menu {
-      gap: 20px;
-    }
+    /* .header__menu {
+      gap: 40px;
+    } */
   }
 </style>

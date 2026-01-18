@@ -7,22 +7,43 @@ import AppHeader from './components/AppHeader.vue';
 import BaseModal from './components/BaseModal.vue';
 import { useMoviesStore } from '../src/store/moviesStore.ts'
 
+// Инициализируем store для работы с фильмами
 const moviesStore = useMoviesStore()
 moviesStore.getTopMovies()
 
-interface ModalProps {
-  modalType: 'login' | 'register' | 'complete',
-  visible: boolean
-}
-
-const props = defineProps<ModalProps>()
-
-// Управление открытием/закрытием модального окна
-// Определяем видимость
+// Управление открытием/закрытием модального окна авторизации/регистрации
+// Определяем видимость и тип модального окна
 const isModalVisible = ref(false);
+const modalType = ref<'login' | 'register' | 'complete'>('login');
 
+/**
+ * Переключение видимости модального окна
+ * Вызывается при клике на кнопку "Войти" в HeaderAuth
+ */
 const toggleModal = () => {
   isModalVisible.value = !isModalVisible.value
+  // При открытии модального окна всегда показываем экран авторизации
+  if (isModalVisible.value) {
+    modalType.value = 'login'
+  }
+}
+
+/**
+ * Обработка закрытия модального окна из BaseModal
+ * Сбрасываем состояние при закрытии
+ */
+const handleCloseModal = () => {
+  isModalVisible.value = false
+  modalType.value = 'login'
+}
+
+/**
+ * Обработка изменения типа модального окна из BaseModal
+ * Синхронизируем тип модального окна между BaseModal и App.vue
+ * @param type - новый тип модального окна ('login' | 'register' | 'complete')
+ */
+const handleModalTypeUpdate = (type: 'login' | 'register' | 'complete') => {
+  modalType.value = type
 }
 
 const handleKeyDown = (event: KeyboardEvent) => {
@@ -72,10 +93,10 @@ onUnmounted(() => {
   </main>
   <AppFooter />
   <BaseModal
-             :modal-type="props.modalType"
+             :modal-type="modalType"
              :visible="isModalVisible"
-             @close="toggleModal">
-
+             @close="handleCloseModal"
+             @update-modal-type="handleModalTypeUpdate">
   </BaseModal>
 </template>
 

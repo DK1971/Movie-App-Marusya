@@ -1,40 +1,89 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed, watch } from 'vue'
 
+// Props для получения ошибок и состояния загрузки из родительского компонента
+interface Props {
+  error?: string | null
+  isLoading?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  error: null,
+  isLoading: false
+})
 
 const email = ref('')
 const password = ref('')
-const isLoading = ref(false)
-const error = ref('')
+const localError = ref('')
+
+// Комбинированная ошибка (локальная валидация + ошибка от API)
+const displayError = computed(() => {
+  // Приоритет: сначала локальная ошибка валидации, затем ошибка от API
+  return localError.value || props.error || ''
+})
+
+// Следим за изменением ошибки от API и сбрасываем локальную ошибку при переключении
+watch(() => props.error, (newError) => {
+  if (newError) {
+    localError.value = ''
+  }
+})
 
 const emit = defineEmits<{
   (e: 'switch-to-register'): void,
   (e: 'login', credentials: { email: string, password: string }): void
 }>()
 
-const handleLogin = async () => {
+// Валидация email
+const validateEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  return emailRegex.test(email)
+}
+
+// Валидация формы
+const validateForm = (): boolean => {
+  localError.value = ''
   if (!email.value || !password.value) {
-    error.value = 'Заполните все поля'
+    localError.value = 'Заполните все поля'
+    return false
+  }
+  if (!validateEmail(email.value)) {
+    localError.value = 'Некорректный email адрес'
+    return false
+  }
+  return true
+}
+
+const handleLogin = async () => {
+  // Валидация формы перед отправкой
+  if (!validateForm()) {
     return
   }
-  isLoading.value = true
+
+  localError.value = ''
+
   try {
-    // TODO: Добавить реальный запрос к API
-    // await loginAPI(email.value, password.value)
-    console.log('Попытка входа в систему: ', { email: email.value, password: password.value })
-    emit('login', { email: email.value, password: password.value })
+    console.log('Попытка входа:', { email: email.value })
+
+    // Эмитим событие с учетными данными
+    emit('login', {
+      email: email.value,
+      password: password.value
+    })
   } catch (err) {
-    error.value = 'Ошибка при входе'
-    console.error(err)
-  } finally {
-    isLoading.value = false
+    localError.value = 'Ошибка при входе'
+    console.error('Login error:', err)
   }
 }
 
-const handleSwitchToRegister = () => {
+const clearForm = () => {
   email.value = ''
   password.value = ''
-  error.value = ''
+  localError.value = ''
+}
+
+const handleSwitchToRegister = () => {
+  clearForm()
   emit('switch-to-register')
 }
 
@@ -42,7 +91,7 @@ const handleSwitchToRegister = () => {
 
 <template>
   <form class="modal__content-wrapper" @submit.prevent="handleLogin">
-    <div v-if="error" class="modal__error">{{ error }}</div>
+    <div v-if="displayError" class="modal__error">{{ displayError }}</div>
     <input
            v-model="email"
            id="email"
@@ -60,8 +109,8 @@ const handleSwitchToRegister = () => {
     <button
             type="submit"
             class="modal__btn-enter"
-            :disabled="isLoading">
-      Войти
+            :disabled="props.isLoading">
+      {{ props.isLoading ? 'Вход...' : 'Войти' }}
     </button>
     <!-- Переход на другое модальное окно -->
     <p @click="handleSwitchToRegister" class="link-register">Регистрация</p>

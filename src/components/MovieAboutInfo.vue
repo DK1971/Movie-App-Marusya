@@ -13,6 +13,7 @@ import BaseButtonFavorite from './BaseButtonFavorite.vue'
 const { movieById } = storeToRefs(useMoviesStore())
 const favoriteStore = useFavoriteMoviesStore()
 const { favoriteMovies } = storeToRefs(favoriteStore)
+
 const userStore = useUserStore()
 const { isAuthorized } = storeToRefs(userStore)
 
@@ -74,6 +75,7 @@ const openModal = () => {
   emit('open-modal')
 }
 
+// Переключаем кнопку Избранное с сохранением или удалением фильма в избранном
 const toggleFavoriteMovie = async () => {
   if (!isAuthorized.value) {
     console.log('Требуется войти в аккаунт')
@@ -82,18 +84,19 @@ const toggleFavoriteMovie = async () => {
   }
   if (!movie.value || !movie.value.id) return
   try {
-    if (isFavorite.value) {
+    if (isFavorite.value && isAuthorized.value) {
+      console.log("Удалить?");
       await favoriteStore.removeFavoriteMovies(movie.value.id)
     } else {
+      console.log("Добавить?");
       await favoriteStore.addFavoriteMovies(movie.value.id)
     }
     // Обновим список
     await favoriteStore.getFavoriteMovies()
   } catch (error) {
-    console.error('Добавление/удаление фильма в/из избранного: ', error)
+    console.log('Ошибка добавленяе/удаления фильма в/из избранного: ', error)
   }
 }
-
 
 onMounted(() => {
   scrollToTop()
@@ -129,8 +132,8 @@ onMounted(() => {
             Трейлер
           </button>
           <BaseButtonFavorite
-                              @click="toggleFavoriteMovie"
-                              @open-modal="openModal" />
+                              @open-modal="openModal"
+                              @toggle-movie="toggleFavoriteMovie" />
         </div>
       </div>
       <div class="movie__poster">
@@ -190,7 +193,7 @@ onMounted(() => {
 
   .movie__about-movie {
     display: grid;
-    max-width: 500px;
+    max-width: 640px;
     margin: 0;
     gap: 24px;
     font-size: 18px;

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { storeToRefs } from 'pinia';
-import { useRouter, useRoute, RouterView } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import { useUserStore } from '../store/userStore.ts'
 import { useFavoriteMoviesStore } from '../store/favoriteMoviesStore.ts';
 import type { IMovies } from "../types/movies.ts";
@@ -12,13 +12,13 @@ const router = useRouter();
 const route = useRoute();
 
 const authStore = useUserStore()
-const user = storeToRefs(authStore)
+// const user = storeToRefs(authStore)
 
 const favoriteStore = useFavoriteMoviesStore()
 const { favoriteMovies } = storeToRefs(favoriteStore)
 
 const favorites = ref(favoriteMovies.value)
-const currentTab = ref("favorites"); // По умолчанию "Избранные фильмы"
+const currentTab = ref("settings"); // По умолчанию "Настройки аккаунта"
 
 interface MovieProps {
   movie: IMovies
@@ -110,6 +110,12 @@ onMounted(async () => {
     <div class="account__content">
 
       <section
+               v-if="currentTab === 'settings'"
+               class="settings-section">
+        <UserSettings />
+      </section>
+
+      <section
                v-if="currentTab === 'favorites'"
                class="favorites-section">
 
@@ -123,12 +129,6 @@ onMounted(async () => {
 
         <p v-else class="section-desc">В Избранном нет сохранённых фильмов или они не отображаются на странице!</p>
 
-      </section>
-
-      <section
-               v-if="currentTab === 'settings'"
-               class="settings-section">
-        <UserSettings />
       </section>
 
     </div>

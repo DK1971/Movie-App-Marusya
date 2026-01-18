@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, computed } from "vue";
+import { ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import type { IMovies } from "../types/movies";
 import { useFavoriteMoviesStore } from "../store/favoriteMoviesStore"
@@ -20,6 +20,8 @@ const { favoriteMovies } = storeToRefs(favoriteStore)
 const userStore = useUserStore()
 const { isAuthorized } = storeToRefs(userStore)
 
+const imageLoaded = ref(true)
+
 // Состояние для отслеживания события :hover 
 const isHovered = ref(false);
 
@@ -38,7 +40,6 @@ const openCard = () => {
     router.push(`/movie/${props.movie.id}`);
     emit('open');
   }
-
 }
 
 // Удаляем карточку из Избранного
@@ -52,44 +53,18 @@ const deleteCardFromFavorites = async () => {
     }
 }
 
-// Проверяем, в избранном ли фильм
-// const isFav = computed(() => {
-//   if (!favoriteMovies.value) return false
-//   return favoriteMovies.value.some((m: any) => m.id === props.movie.id)
-// })
-
-// Тогглим избранное (добавляем/удаляем)
-// const toggleFavorite = async (evt: Event) => {
-//   evt.stopPropagation()
-//   if (!isAuthorized.value) {
-//     alert('Требуется войти в аккаунт чтобы добавить в избранное')
-//     return
-//   }
-//   try {
-//     if (isFav.value) {
-//       await favoriteStore.removeFavoriteMovies(props.movie.id)
-//     } else {
-//       await favoriteStore.addFavoriteMovies(props.movie.id)
-//     }
-//     await favoriteStore.getFavoriteMovies()
-//   } catch (err) {
-//     console.error('Failed to toggle favorite', err)
-//   }
-// }
-
 // Текущее значение src для постера — меняется при ошибке или при отсутствии posterUrl
 const currentPoster = ref(props.movie?.posterUrl ?? '/dummy_default.jpg')
+
+const posterError = () => {
+  imageLoaded.value = false;
+  currentPoster.value = '/dummy_default.jpg'
+};
 
 // Если меняется входной posterUrl — обновляем currentPoster
 watch(() => props.movie?.posterUrl, (newVal) => {
   currentPoster.value = newVal ?? '/dummy_default.jpg'
 })
-
-const imageLoaded = ref(true)
-const posterError = () => {
-  imageLoaded.value = false;
-  currentPoster.value = '/dummy_default.jpg'
-};
 
 </script>
 
@@ -165,11 +140,9 @@ const posterError = () => {
     left: -15px;
     z-index: 100;
     background-color: var(--main-white);
-    /* box-shadow: .3px .3px 0px 0px rgba(0, 0, 0, 0.3); */
     border: none;
     border-radius: 50px;
     padding: 8px 24px;
-
     font-family: var(--font-family);
     font-weight: 700;
     font-size: 24px;

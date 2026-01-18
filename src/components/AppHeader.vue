@@ -1,20 +1,35 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
+import { useUserStore } from '../store/userStore.ts'
+import { useDisplayStore } from '../store/useDisplayStore.ts'
+// Импорт базовых компонентов
 import HeaderLogo from './HeaderLogo.vue';
 import HeaderMenu from './HeaderMenu.vue';
+import HeaderSeachBar from './HeaderSeachBar.vue';
 import HeaderAuth from './HeaderAuth.vue';
-import { useUserStore } from '../store/userStore.ts'
+// Импорт мобильных версий (иконок)
+import MobileHeaderMenu from './MobileHeaderMenu.vue';
+import MobileHeaderSearch from './MobileHeaderSearch.vue';
+import MobileHeaderAuth from './MobileHeaderAuth.vue';
+
 
 const userStore = useUserStore()
 const { isAuthorized } = storeToRefs(userStore)
 
+const { isLaptop, isTablet, isMobile } = storeToRefs(useDisplayStore());
+
 const router = useRouter();
+const route = useRoute();
+
+// Состояние для управления видимостью поиска в мобильной версии
+const isSearchOpen = ref(false);
 
 const emit = defineEmits<{
   (e: 'open'): void
   (e: 'open-account'): void
+  (e: 'open-search'): void
 }>()
 
 const openModal = () => {
@@ -34,14 +49,66 @@ const handleAuthClick = () => {
   }
 }
 
+const openSearchBar = () => {
+  isSearchOpen.value = !isSearchOpen.value;
+  emit('open-search')
+}
+
+const closeSearchBar = () => {
+  isSearchOpen.value = false;
+}
+
+// Закрываем поиск при смене маршрута (например, при переходе на страницу фильма)
+watch(
+  () => route.fullPath,
+  () => {
+    if (isMobile.value) {
+      isSearchOpen.value = false;
+    }
+  }
+);
+
 </script>
 
 <template>
   <header id="top" class="header">
     <div class="container header__container">
       <HeaderLogo />
-      <HeaderMenu />
-      <HeaderAuth @click="handleAuthClick" />
+
+      <template v-if="!isLaptop">
+        <HeaderMenu />
+        <HeaderAuth @click="handleAuthClick" />
+      </template>
+
+      <template v-else>
+        <div class="mobile-controls">
+
+          <MobileHeaderMenu />
+
+          <!-- Строка поиска фильмов и блок результата поисков -->
+          <template v-if="!isMobile">
+            <HeaderSeachBar />
+          </template>
+          <template v-else>
+            <MobileHeaderSearch @click="openSearchBar" />
+          </template>
+
+          <MobileHeaderAuth @click="handleAuthClick" />
+        </div>
+
+        <!-- Мобильная версия поиска - показывается поверх контента -->
+        <div v-if="isMobile && isSearchOpen" class="mobile-search-overlay" @click.self="closeSearchBar">
+          <div class="mobile-search-container">
+            <button class="mobile-search-close" @click="closeSearchBar">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none">
+                <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+              </svg>
+            </button>
+            <HeaderSeachBar @open-movie="closeSearchBar" />
+          </div>
+        </div>
+      </template>
+
     </div>
   </header>
 </template>
@@ -64,9 +131,69 @@ const handleAuthClick = () => {
     height: 32px;
   }
 
+  .mobile-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 40px;
+    /* Расстояние между иконками */
+  }
+
   @media (max-width: 1280px) {
-    .header__container {
-      gap: 40px;
+    .container {
+      padding-inline: 40px;
     }
+  }
+
+  @media (max-width: 768px) {
+    .mobile-controls {
+      justify-content: flex-end;
+    }
+  }
+
+  /* Мобильная версия поиска */
+  .mobile-search-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 80px;
+    padding-inline: 20px;
+  }
+
+  .mobile-search-container {
+    position: relative;
+    width: 100%;
+    max-width: 100%;
+    background-color: var(--background-header);
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  .mobile-search-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-primary, #fff);
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+  }
+
+  .mobile-search-close:hover {
+    opacity: 0.7;
   }
 </style>
