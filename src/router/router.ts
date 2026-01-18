@@ -32,12 +32,12 @@ const router = createRouter({
       meta: { requiresAuth: true }, // Добавляем метаданные для проверки авторизации
       children: [
         {
-          path: "favorites",
-          component: () => import("../components/FavoriteMovies.vue"),
-        },
-        {
           path: "settings",
           component: () => import("../components/UserSettings.vue"),
+        },
+        {
+          path: "favorites",
+          component: () => import("../components/FavoriteMovies.vue"),
         },
       ],
     },

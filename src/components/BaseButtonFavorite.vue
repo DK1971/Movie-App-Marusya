@@ -1,23 +1,18 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useMoviesStore } from '../store/moviesStore.ts'
 import { useUserStore } from '../store/userStore.ts'
-import { useFavoriteMoviesStore } from '../store/favoriteMoviesStore.ts'
+import { useFavoriteMoviesStore } from '../store/favoriteMoviesStore.ts';
 
-// ═══════════════════════════════════════════════════════════════
-// СОСТОЯНИЕ ИЗ ХРАНИЛИЩ (Pinia stores)
-// ═══════════════════════════════════════════════════════════════
-
+// === СОСТОЯНИЕ ИЗ ХРАНИЛИЩ ===
+// UserStore
 const userStore = useUserStore()
 const { isAuthorized } = storeToRefs(userStore)
-
+// FavoriteStore
 const favoriteStore = useFavoriteMoviesStore()
 const { favoriteMovies } = storeToRefs(favoriteStore)
 
-// ═══════════════════════════════════════════════════════════════
-// ВХОДНЫЕ ДАННЫЕ (Props)
-// ═══════════════════════════════════════════════════════════════
+// === PROPS ===
 // movieId: ID фильма, для которого работает кнопка
 interface Props {
   movieId?: number
@@ -27,50 +22,7 @@ const props = withDefaults(defineProps<Props>(), {
   movieId: undefined
 })
 
-// ═══════════════════════════════════════════════════════════════
-// ВЫЧИСЛЯЕМЫЕ СВОЙСТВА (Computed properties)
-// ═══════════════════════════════════════════════════════════════
-
-/**
- * Проверяет, находится ли фильм в избранном
- * @returns true если фильм в избранном, false если нет
- */
-const isFavorite = computed(() => {
-  // Если нет ID фильма или списка избранных - фильм не в избранном
-  if (!props.movieId || !favoriteMovies.value) return false
-  
-  // Ищем фильм по ID в списке избранных
-  return favoriteMovies.value.some(movie => movie.id === props. movieId)
-})
-
-/**
- * Определяет иконку кнопки в зависимости от статуса авторизации и избранного
- * @returns Путь к иконке (liked или like)
- */
-const iconSrc = computed(() => {
-  // Если пользователь не авторизован - всегда показываем пустое сердце
-  if (!isAuthorized.value) {
-    return '/icons/like-icon.svg'
-  }
-  
-  // Если авторизован - показываем заполненное сердце если фильм в избранном
-  return isFavorite.value
-    ? '/icons/liked-icon.svg'      // Полное сердце
-    : '/icons/like-icon.svg'       // Пустое сердце
-})
-
-/**
- * Текст для подсказки при наведении на кнопку
- */
-const buttonTitle = computed(() => {
-  if (!isAuthorized.value) return 'Войти для добавления в избранное'
-  return isFavorite.value ? 'Удалить из избранного' :  'Добавить в избранное'
-})
-
-// ═══════════════════════════════════════════════════════════════
-// СОБЫТИЯ (Emits)
-// ═══════════════════════════════════════════════════════════════
-
+// === EVENTS ===
 const emit = defineEmits<{
   // Открыть модальное окно входа
   (e: 'open-modal'): void
@@ -78,65 +30,60 @@ const emit = defineEmits<{
   (e: 'toggle-movie'): void
 }>()
 
-// ═══════════════════════════════════════════════════════════════
-// МЕТОДЫ (Methods)
-// ═══════════════════════════════════════════════════════════════
+// === ВЫЧИСЛЯЕМЫЕ СВОЙСТВА (Computed properties) ===
+/**
+* Проверяет, находится ли фильм в избранном
+* @returns true если фильм в избранном, false если нет
+*/
+const isFavorite = computed(() => {
+  // Если нет ID фильма или списка избранных - фильм не в избранном
+  if (!props.movieId || !favoriteMovies.value) return false
+
+  // Ищем фильм по ID в списке избранных
+  return favoriteMovies.value.some(movie => movie.id === props.movieId)
+})
 
 /**
- * Обработчик клика по кнопке
- * Если пользователь не авторизован - открываем форму входа
- * Если авторизован - переключаем статус избранного
- */
+* Определяет иконку кнопки в зависимости от статуса авторизации и избранного
+* @returns Путь к иконке (liked или like)
+*/
+const iconSrc = computed(() => {
+  // Если не авторизован — всегда показываем "like"
+  if (!isAuthorized.value) {
+    return '/icons/like-icon.svg'
+  }
+  // Если авторизован — показываем в зависимости от isFavorite
+  return isFavorite.value
+    ? '/icons/liked-icon.svg'
+    : '/icons/like-icon.svg'
+})
+
+// === МЕТОДЫ ===
+/**
+* Обработчик клика по кнопке
+* Если пользователь не авторизован - открываем форму входа
+* Если авторизован - переключаем статус избранного
+*/
 const handleClick = () => {
   if (!isAuthorized.value) {
-    // Пользователь не авторизован - показываем форму входа
-    emit('open-modal')
+    emit('open-modal') // Открываем модалку входа
   } else {
-    // Пользователь авторизован - переключаем избранное
-    emit('toggle-movie')
+    emit('toggle-movie') // Переключаем избранное (в родителе)
   }
 }
+
 </script>
 
 <template>
   <button
-    @click="handleClick"
-    : title="buttonTitle"
-    type="button"
-    class="btn-favorite"
-    :aria-label="buttonTitle"
-  >
+          @click="handleClick"
+          type="button"
+          class="btn-actions">
     <img
-      :src="iconSrc"
-      :alt="buttonTitle"
-      class="btn-favorite__icon"
-    />
+         :src="iconSrc"
+         alt="Изменить избранное"
+         class="icon" />
   </button>
 </template>
 
-<style scoped>
-.btn-favorite {
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 6px;
-  transition: transform 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.btn-favorite:hover {
-  transform: scale(1.1);
-}
-
-.btn-favorite: active {
-  transform: scale(0.95);
-}
-
-.btn-favorite__icon {
-  width: 28px;
-  height: 28px;
-  object-fit: contain;
-}
-</style>
+<style scoped></style>

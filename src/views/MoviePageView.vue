@@ -6,6 +6,8 @@ import MovieAboutInfo from '../components/MovieAboutInfo.vue';
 import { useMoviesStore } from '../store/moviesStore';
 
 const route = useRoute();
+// === СОСТОЯНИЕ ИЗ ХРАНИЛИЩ ===
+// MoviesStore
 const moviesStore = useMoviesStore();
 const { movieById, isLoading } = storeToRefs(moviesStore);
 const { getMovieById } = moviesStore;
@@ -16,6 +18,7 @@ const loadMovieDetails = async (id?: string | string[]) => {
   if (movieId) await getMovieById(movieId);
 }
 
+// === LIFECYCLE HOOKS === 
 onMounted(async () => {
   if (route.params.id) {
     await loadMovieDetails(route.params.id);
@@ -38,7 +41,8 @@ watch(() => route.params.id, async (newId, oldId) => {
 
     <MovieAboutInfo
                     v-else-if="movieById"
-                    :movie="movieById" />
+                    :movie="movieById"
+                    modal-type="login" />
 
     <div v-else>
       <p>Информация о фильме не найдена.</p>
