@@ -32,7 +32,7 @@
   --menu-underline: rgba(220, 93, 252, 1);
   /* Кнопки */
   --background-gray-primary: rgba(57, 59, 60, 1);
-  --background-gray-secondary: rgba(51, 51, 51, 1);
+  --background-gray-secondary: rgba(116, 116, 116, 1);
   --background-lightblue: rgba(103, 165, 235, 1);
   --background-dirtyblue: rgba(69, 82, 110, 1);
   /* Inputs */
@@ -150,11 +150,13 @@ ul > li {
 
 /* Button Styles */
 button {
+  margin: 0;
+  padding: 0;
   padding-inline: 48px;
   padding-block: 16px;
   background-color: inherit;
   border: none;
-  border-radius: 28px;
+
   color: var(--main-white);
   font-family: var(--first-font-family);
   font-size: 18px;
@@ -164,8 +166,8 @@ button {
 }
 
 .btn-auth {
-  margin: 0;
-  padding: 0;
+  padding-inline: 0;
+  padding-block: 10px;
   border: none;
   font-size: 24px;
   font-weight: 400;
@@ -173,15 +175,33 @@ button {
 }
 
 .btn-trailer {
+  border-radius: 28px;
   background-color: var(--background-lightblue);
+  transition: background-color 0.3s ease;
+}
+
+.btn-trailer:hover {
+  background-color: var(--background-dirtyblue);
 }
 
 .btn-info {
+  border-radius: 28px;
   background-color: var(--background-gray-primary);
+  transition: background-color 0.3s ease;
+}
+
+.btn-info:hover {
+  background-color: var(--background-gray-secondary);
 }
 
 .btn-actions {
+  border-radius: 28px;
   padding-inline: 22px;
+  background-color: var(--background-gray-primary);
+  transition: background-color 0.3s ease;
+}
+
+.btn-actions:hover {
   background-color: var(--background-gray-secondary);
 }
 

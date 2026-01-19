@@ -3,8 +3,12 @@ import { storeToRefs } from "pinia"
 import HeaderSeachBar from './HeaderSeachBar.vue';
 import { useMoviesStore } from '../store/moviesStore.ts'
 
-const { searchTitle } = storeToRefs(useMoviesStore())
+// === СОСТОЯНИЕ ИЗ ХРАНИЛИЩ ===
+// MoviesStore
+const moviesStore = useMoviesStore()
+const { searchTitle } = storeToRefs(moviesStore)
 
+// === МЕТОДЫ ===
 const onSearch = (value: string) => {
   console.log('search:', value)
   // store action
@@ -68,9 +72,13 @@ const onReset = () => {
     transition: transform 0.3s ease;
   }
 
+  .menu-item:active::after,
   .menu-item:hover::after {
     transform: scaleX(1);
   }
+
+
+
 
   @media (max-width: 1280px) {
     /* .header__menu {

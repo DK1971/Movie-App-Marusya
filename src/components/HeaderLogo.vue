@@ -21,5 +21,6 @@ const goHomePage = () => {
   .marusia-white {
     width: 143px;
     height: 32px;
+    cursor: pointer;
   }
 </style>
