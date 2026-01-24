@@ -2,23 +2,25 @@
 import { onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useRouter } from "vue-router";
-import CardGenres from '../components/BaseCardGenres.vue'
-import { useMoviesStore } from '../store/moviesStore'
+import CardGenres from '@bases/BaseCardGenres.vue'
+// Импорт из Store
+import { useMoviesStore } from '@/store/moviesStore.ts'
 
+// === STATE ===
+// MoviesStore
 const { getMoviesByGenres } = useMoviesStore()
 const { genres } = storeToRefs(useMoviesStore())
 
+// === ИСПОЛЬЗОВАНИЕ ROUTER ===
 const router = useRouter();
 const goToGenre = (genre: string) => {
   router.push(`/genre/${genre}`);
 };
 
-
+// === LIFECYCLE HOOKS ===
 onMounted(async () => {
   await getMoviesByGenres()
 })
-
-
 </script>
 
 <template>

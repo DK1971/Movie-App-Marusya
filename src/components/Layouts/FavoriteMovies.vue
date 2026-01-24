@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
-import type { IMovies } from "../types/movies";
+import type { IMovies } from "@/types/movies.ts";
 // Импорт из Store
-import { useFavoriteMoviesStore } from "../store/favoriteMoviesStore"
+import { useFavoriteMoviesStore } from "@/store/favoriteMoviesStore.ts"
 // Импорт базовых компонентов
-import BaseCardMovies from "../components/BaseCardMovies.vue";
+import BaseCardMovies from "@bases/BaseCardMovies.vue";
 
 // === STATE  ===
 // FavoriteStore

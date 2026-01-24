@@ -1,7 +1,7 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
-import CINEMA_API from "../api/cinemaguideAPI";
-import type { IMovies } from "../types/movies.ts";
+import CINEMA_API from "@/api/cinemaguideAPI";
+import type { IMovies } from "@/types/movies.ts";
 
 export const useFavoriteMoviesStore = defineStore("favoriteMovies", () => {
   // state

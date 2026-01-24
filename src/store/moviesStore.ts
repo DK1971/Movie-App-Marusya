@@ -1,8 +1,8 @@
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
 // import { debounce } from "lodash-es";
-import CINEMA_API from "../api/cinemaguideAPI";
-import type { IMovies } from "../types/movies.ts";
+import CINEMA_API from "@/api/cinemaguideAPI";
+import type { IMovies } from "@/types/movies.ts";
 
 export const useMoviesStore = defineStore("movies", () => {
   // state

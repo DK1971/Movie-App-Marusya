@@ -2,10 +2,10 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { RouterView } from 'vue-router'
 
-import AppFooter from './components/AppFooter.vue';
-import AppHeader from './components/AppHeader.vue';
-import BaseModal from './components/BaseModal.vue';
-import { useMoviesStore } from '../src/store/moviesStore.ts'
+import AppFooter from '@components/AppFooter.vue';
+import AppHeader from '@components/AppHeader.vue';
+import BaseModal from '@components/BaseModal.vue';
+import { useMoviesStore } from '@/store/moviesStore.ts'
 
 // Инициализируем store для работы с фильмами
 const moviesStore = useMoviesStore()

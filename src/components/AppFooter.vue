@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useDisplayStore } from '@/store/useDisplayStore.ts'
 
 </script>
 
@@ -124,7 +125,6 @@
     width: 36px;
     height: 36px;
     outline: none;
-    border-radius: 8px;
     background-color: inherit;
     background-repeat: no-repeat;
     background-position: center;
@@ -147,6 +147,24 @@
 
   .social-links:hover svg path {
     fill: var(--content-active);
+  }
+
+  @media (max-width: 1024px) {
+    .footer__social-links {
+      justify-content: center;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .footer__social-links {
+      justify-content: flex-start;
+      gap: 20px;
+    }
+
+    .social-links {
+      width: 22px;
+      height: 22px;
+    }
   }
 
 </style>

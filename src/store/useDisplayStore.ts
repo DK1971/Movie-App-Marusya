@@ -30,5 +30,6 @@ export const useDisplayStore = defineStore("display", () => {
     isLaptop,
     isTablet,
     isMobile,
+    updateWidth,
   };
 });

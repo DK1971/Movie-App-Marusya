@@ -135,6 +135,7 @@ ul > li {
 }
 
 .img-poster {
+  width: 100%;
   object-fit: cover;
   overflow: hidden;
 }
@@ -148,6 +149,24 @@ ul > li {
   padding: 0;
 }
 
+@media (max-width: 1280px) {
+  .container {
+    padding-inline: 60px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .container {
+    padding-inline: 40px;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding-inline: 20px;
+  }
+}
+
 /* Button Styles */
 button {
   margin: 0;
@@ -156,7 +175,6 @@ button {
   padding-block: 16px;
   background-color: inherit;
   border: none;
-
   color: var(--main-white);
   font-family: var(--first-font-family);
   font-size: 18px;
@@ -168,10 +186,8 @@ button {
 .btn-auth {
   padding-inline: 0;
   padding-block: 10px;
-  border: none;
   font-size: 24px;
   font-weight: 400;
-  cursor: pointer;
 }
 
 .btn-trailer {
@@ -518,7 +534,7 @@ iframe {
 }
 
 .movie__poster {
-  /* flex: 1; */
+  flex: 1;
   max-width: 680px;
   max-height: 552px;
   overflow: hidden;

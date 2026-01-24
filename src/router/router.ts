@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
-import { useUserStore } from "../store/userStore";
+import { useUserStore } from "@/store/userStore";
 
 const router = createRouter({
   history: createWebHistory("./"),
@@ -33,11 +33,11 @@ const router = createRouter({
       children: [
         {
           path: "settings",
-          component: () => import("../components/UserSettings.vue"),
+          component: () => import("../components/Layouts/UserSettings.vue"),
         },
         {
           path: "favorites",
-          component: () => import("../components/FavoriteMovies.vue"),
+          component: () => import("../components/Layouts/FavoriteMovies.vue"),
         },
       ],
     },

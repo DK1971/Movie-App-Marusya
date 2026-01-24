@@ -1,0 +1,65 @@
+<script setup lang="ts">
+import { storeToRefs } from 'pinia'
+import { useUserStore } from '@/store/userStore.ts'
+
+const userStore = useUserStore()
+const { isAuthorized } = storeToRefs(userStore)
+
+const emit = defineEmits<{
+  (e: 'open-modal'): void
+  (e: 'open-account'): void
+}>()
+
+const openModal = () => {
+  emit('open-modal')
+}
+
+const openAccount = () => {
+  emit('open-account')
+}
+
+
+</script>
+
+<template>
+  <button
+          v-if="!isAuthorized"
+          @click="openModal"
+          class=" btn-mobile">
+    <span>
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+           width="24.000000" height="24.000000" fill="none">
+        <rect id="icon / user" width="24.000000" height="24.000000" x="0.000000" y="0.000000" fill="rgb(255,255,255)"
+              fill-opacity="0" />
+        <path id="Vector"
+              d="M4 22C4 17.5817 7.58172 14 12 14C16.4183 14 20 17.5817 20 22L18 22C18 18.6863 15.3137 16 12 16C8.68629 16 6 18.6863 6 22L4 22ZM12 13C8.685 13 6 10.315 6 7C6 3.685 8.685 1 12 1C15.315 1 18 3.685 18 7C18 10.315 15.315 13 12 13ZM12 11C14.21 11 16 9.21 16 7C16 4.79 14.21 3 12 3C9.79 3 8 4.79 8 7C8 9.21 9.79 11 12 11Z"
+              fill="rgb(255,255,255)" fill-rule="nonzero" />
+      </svg>
+    </span>
+  </button>
+  <button
+          v-else
+          @click="openAccount"
+          class="btn-mobile">
+    <span>
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+           width="24.000000" height="24.000000" fill="none">
+        <rect id="filled=true" width="24.000000" height="24.000000" x="0.000000" y="0.000000" fill="rgb(255,255,255)"
+              fill-opacity="0" />
+        <path id="Vector"
+              d="M4 22C4 17.5817 7.58172 14 12 14C16.4183 14 20 17.5817 20 22L4 22ZM12 13C8.685 13 6 10.315 6 7C6 3.685 8.685 1 12 1C15.315 1 18 3.685 18 7C18 10.315 15.315 13 12 13Z"
+              fill="rgb(255,255,255)" fill-rule="nonzero" />
+      </svg>
+    </span>
+  </button>
+</template>
+
+<style scoped>
+  @media (max-width: 768px) {
+    .btn-mobile {
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+</style>

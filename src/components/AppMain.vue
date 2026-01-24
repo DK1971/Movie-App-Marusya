@@ -1,18 +1,23 @@
 <script setup lang="ts">
 import { onMounted, computed } from "vue"
 import { storeToRefs } from 'pinia';
-import { useMoviesStore } from '../store/moviesStore.ts'
-import RandomMovie from "./RandomMovie.vue"
-import BaseCardMovies from "./BaseCardMovies.vue"
+// Импорт из Store
+import { useMoviesStore } from '@/store/moviesStore.ts'
+// Импорт компонентов
+import RandomMovie from "@layouts/RandomMovie.vue"
+import BaseCardMovies from "@bases/BaseCardMovies.vue"
 
+// === STORE ===
+// MoviesStore
 const moviesStore = useMoviesStore()
 const { getTopMovies, getMoviesByRandom } = moviesStore
 const { movieRandom, moviesTop } = storeToRefs(moviesStore)
 
+// === ВЫЧИСЛЯЕМЫЕ СВОЙСТВА ===
 const random = computed(() => movieRandom.value ?? null)
-
 const topMovies = computed(() => moviesTop.value ?? [])
 
+// === LIFECYCLE HOOKS ===
 onMounted(async () => {
   // Загружаем случайный фильм
   await getMoviesByRandom()
@@ -191,10 +196,10 @@ onMounted(async () => {
   @media (max-width: 1280px) {
 
     /* Section Movies random */
-    .movies__random {
-      flex-direction: column-reverse;
-    }
+
 
     /* Section Movies random Img */
+
+
   }
 </style>

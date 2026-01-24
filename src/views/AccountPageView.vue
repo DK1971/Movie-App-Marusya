@@ -2,24 +2,32 @@
 import { ref, onMounted } from "vue";
 import { storeToRefs } from 'pinia';
 import { useRouter, useRoute } from "vue-router";
-import { useUserStore } from '../store/userStore.ts'
-import { useFavoriteMoviesStore } from '../store/favoriteMoviesStore.ts';
-import type { IMovies } from "../types/movies.ts";
-import FavoriteMovies from "../components/FavoriteMovies.vue";
-import UserSettings from "../components/UserSettings.vue";
+import type { IMovies } from "@/types/movies.ts";
+// Импорт из Store
+import { useUserStore } from '@/store/userStore.ts'
+import { useFavoriteMoviesStore } from '@/store/favoriteMoviesStore.ts';
+// Импорт компонентов
+import FavoriteMovies from "@components/FavoriteMovies.vue";
+import UserSettings from "@layouts/UserSettings.vue";
 
+// === ИСПОЛЬЗОВАНИЕ ROUTER ===
 const router = useRouter();
 const route = useRoute();
 
+// === STATE ===
+// UserStore
 const authStore = useUserStore()
 // const user = storeToRefs(authStore)
 
 const favoriteStore = useFavoriteMoviesStore()
 const { favoriteMovies } = storeToRefs(favoriteStore)
 
+// === ЛОКАЛЬНОЕ СОСТОЯНИЕ (Refs) ===
 const favorites = ref(favoriteMovies.value)
+
 const currentTab = ref("settings"); // По умолчанию "Настройки аккаунта"
 
+// === PROPS ===
 interface MovieProps {
   movie: IMovies
   rank?: number
@@ -29,16 +37,8 @@ interface MovieProps {
 
 const movieProps = defineProps<MovieProps>()
 
-// Устанавливаем начальное состояние вкладки в зависимости от маршрута
-onMounted(() => {
-  if (route.path.includes("settings")) {
-    currentTab.value = "settings";
-  } else {
-    currentTab.value = "favorites";
-  }
-});
-
-// Функция для переключения вкладок
+// === МЕТОДЫ ===
+// Переключение вкладок
 const setTab = (tab: string) => {
   currentTab.value = tab;
   // Обновляем маршрут в зависимости от выбранной вкладки
@@ -49,13 +49,21 @@ const setTab = (tab: string) => {
   }
 }
 
+// === LIFECYCLE HOOKS === 
+// Устанавливаем начальное состояние вкладки в зависимости от маршрута
+onMounted(() => {
+  if (route.path.includes("settings")) {
+    currentTab.value = "settings";
+  } else {
+    currentTab.value = "favorites";
+  }
+});
+
 onMounted(async () => {
   await authStore.getProfile()
   await favoriteStore.getFavoriteMovies()
   favorites.value = favoriteStore.favoriteMovies
 })
-
-
 
 </script>
 
@@ -124,7 +132,7 @@ onMounted(async () => {
                           :movie="movieProps.movie"
                           :movies="favorites"
                           :showIndex="false"
-                          :showDelete?="true" />
+                          :showDelete="true" />
         </ul>
 
         <p v-else class="section-desc">В Избранном нет сохранённых фильмов или они не отображаются на странице!</p>

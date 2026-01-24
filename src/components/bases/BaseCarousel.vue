@@ -1,28 +1,34 @@
 <script setup lang="ts">
 import { onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { useMoviesStore } from '../store/moviesStore';
-import MobileBaseCardMovies from './mobiles/MobileBaseCardMovies.vue';
+// Импорт из Store
+import { useMoviesStore } from '@/store/moviesStore.ts';
+// Импорт компонентов
+import MobileBaseCardMovies from '@mobiles/MobileBaseCardMovies.vue';
 
+// ===STORE ===
+// MoviesStore
 const store = useMoviesStore();
 const router = useRouter();
 
-// Загружаем данные при монтировании
-onMounted(() => {
-  store.getTopMovies();
-});
-
+// === COMPUTED ===
 // Создаем вычисляемое свойство для первых 5 фильмов
 const topFiveMovies = computed(() => {
   // Проверяем, что массив существует, и берем первые 5 элементов
   return store.moviesTop ? store.moviesTop.slice(0, 5) : [];
 });
 
+// === METHODS ===
 // Функция для перехода на страницу фильма
 const goToMovie = (id: number) => {
   router.push(`/movie/${id}`);
 };
 
+// === HOOKS ===
+// Загружаем данные при монтировании
+onMounted(() => {
+  store.getTopMovies();
+});
 </script>
 
 <template>

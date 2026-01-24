@@ -1,5 +1,23 @@
 {
   "files": [],
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["src/*"],
+      "@components/*": ["src/components/*"],
+      "@bases/*": ["src/components/bases/*"],
+      "@layouts/*": ["src/components/Layouts/*"],
+      "@mobiles/*": ["src/components/mobiles/*"],
+      "@modals/*": ["src/components/modals/*"],
+      "@views/*": ["src/views/*"]
+    },
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "ignoreDeprecations": "6.0",
+    "composite": true,
+    "baseUrl": "./"
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue"],
   "references": [
     { "path": "./tsconfig.app.json" },
     { "path": "./tsconfig.node.json" }

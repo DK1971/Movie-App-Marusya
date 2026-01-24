@@ -2,10 +2,10 @@
 import { ref, watch } from "vue";
 import { storeToRefs } from 'pinia'
 import { useRouter } from "vue-router";
-import type { IMovies } from "../types/movies";
+import type { IMovies } from "@/types/movies.ts";
 // Импорт из Store
-import { useFavoriteMoviesStore } from "../store/favoriteMoviesStore"
-import { useUserStore } from "../store/userStore"
+import { useFavoriteMoviesStore } from "@/store/favoriteMoviesStore.ts"
+import { useUserStore } from "@/store/userStore.ts"
 
 // === ИСПОЛЬЗОВАНИЕ ROUTER ===
 const router = useRouter();

@@ -2,21 +2,21 @@
 import { onMounted, watch, computed, onUnmounted, ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useRouter } from "vue-router";
-import BaseCardMovies from "../components/BaseCardMovies.vue";
-import { useMoviesStore } from '../store/moviesStore';
-// import { genreTranslations } from '../utils/movieUtils'
+import BaseCardMovies from "@bases/BaseCardMovies.vue";
+// Импорт из Store
+import { useMoviesStore } from '@/store/moviesStore.ts';
+// import { genreTranslations } from '@/utils/movieUtils'
 
-const props = defineProps<{ genre: string }>();
-
+// === STATE ===
+// MoviesStore
 const moviesStore = useMoviesStore();
 const { movies, isLoading } = storeToRefs(useMoviesStore());
 const { getMovies } = moviesStore;
 
-const load = async (g?: string) => {
-  if (!g) return;
-  await getMovies({ genre: g });
-}
+// === PROPS ===
+const props = defineProps<{ genre: string }>();
 
+// === ИСПОЛЬЗОВАНИЕ ROUTER ===
 const router = useRouter();
 // Переход на страницу Жанры
 const goToGenres = () => {
@@ -47,6 +47,11 @@ const genreTranslations: Record<string, string> = {
   western: "Вестерн",
 };
 
+// === МЕТОДЫ ===
+const load = async (g?: string) => {
+  if (!g) return;
+  await getMovies({ genre: g });
+}
 
 // Метод перевода названия жанра для заголовка
 const genreTitle = computed(() => {
@@ -55,7 +60,7 @@ const genreTitle = computed(() => {
   return genreTranslations[g] || (g.charAt(0).toUpperCase() + g.slice(1));
 });
 
-
+// === ЛОКАЛЬНОЕ СОСТОЯНИЕ (Refs) ===
 // Клиентская пагинация / ленивая загрузка карточек 
 const displayedMovies = ref<any[]>([]);
 const initialCount = 10;
@@ -64,6 +69,7 @@ const currentIndex = ref(0);
 const allLoaded = ref(false);
 const isAppending = ref(false);
 
+// === МЕТОДЫ ===
 const resetPagination = () => {
   displayedMovies.value = [];
   currentIndex.value = 0;
@@ -94,6 +100,7 @@ const scrollToTop = () => {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
+// === LIFECYCLE HOOKS ===
 onMounted(async () => {
   scrollToTop()
   if (props.genre) await load(props.genre);
@@ -122,9 +129,6 @@ watch(movies, (newMovies) => {
 onUnmounted(() => {
   window.removeEventListener('scroll', onScroll);
 });
-
-
-
 
 </script>
 

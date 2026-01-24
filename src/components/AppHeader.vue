@@ -2,36 +2,42 @@
 import { ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRouter, useRoute } from "vue-router";
-import { useUserStore } from '../store/userStore.ts'
-import { useDisplayStore } from '../store/useDisplayStore.ts'
-// Импорт базовых компонентов
-import HeaderLogo from './HeaderLogo.vue';
-import HeaderMenu from './HeaderMenu.vue';
-import HeaderSeachBar from './HeaderSeachBar.vue';
-import HeaderAuth from './HeaderAuth.vue';
+// Импорт стора
+import { useUserStore } from '@/store/userStore.ts'
+import { useDisplayStore } from '@/store/useDisplayStore.ts'
+// Импорт компонентов
+import HeaderLogo from '@layouts/HeaderLogo.vue';
+import HeaderMenu from '@layouts/HeaderMenu.vue';
+import HeaderSeachBar from '@layouts/HeaderSeachBar.vue';
+import HeaderAuth from '@layouts/HeaderAuth.vue';
 // Импорт мобильных версий (иконок)
-import MobileHeaderMenu from './MobileHeaderMenu.vue';
-import MobileHeaderSearch from './MobileHeaderSearch.vue';
-import MobileHeaderAuth from './MobileHeaderAuth.vue';
+import MobileHeaderMenu from '@mobiles/MobileHeaderMenu.vue';
+import MobileHeaderSearch from '@mobiles/MobileHeaderSearch.vue';
+import MobileHeaderAuth from '@mobiles/MobileHeaderAuth.vue';
 
-
+// === STORE ===
+// UserStore
 const userStore = useUserStore()
 const { isAuthorized } = storeToRefs(userStore)
-
+// DisplayStore
 const { isLaptop, isTablet, isMobile } = storeToRefs(useDisplayStore());
 
+// === ИСПОЛЬЗОВАНИЕ ROUTER ===
 const router = useRouter();
 const route = useRoute();
 
+// === ВЫЧИСЛЯЕМЫЕ СВОЙСТВА ===
 // Состояние для управления видимостью поиска в мобильной версии
 const isSearchOpen = ref(false);
 
+// === EVENTS ===
 const emit = defineEmits<{
   (e: 'open'): void
   (e: 'open-account'): void
   (e: 'open-search'): void
 }>()
 
+// === МЕТОДЫ ===
 const openModal = () => {
   emit('open')
 }
@@ -126,11 +132,6 @@ watch(
     gap: 80px;
   }
 
-  .marusia-white {
-    width: 143px;
-    height: 32px;
-  }
-
   .mobile-controls {
     display: flex;
     align-items: center;
@@ -138,18 +139,6 @@ watch(
     width: 100%;
     gap: 40px;
     /* Расстояние между иконками */
-  }
-
-  @media (max-width: 1280px) {
-    .container {
-      padding-inline: 40px;
-    }
-  }
-
-  @media (max-width: 768px) {
-    .mobile-controls {
-      justify-content: flex-end;
-    }
   }
 
   /* Мобильная версия поиска */
@@ -195,5 +184,12 @@ watch(
 
   .mobile-search-close:hover {
     opacity: 0.7;
+  }
+
+  @media (max-width: 768px) {
+    .mobile-controls {
+      justify-content: flex-end;
+      gap: 20px;
+    }
   }
 </style>

@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { useUserStore } from '../store/userStore.ts'
-import { useFavoriteMoviesStore } from '../store/favoriteMoviesStore.ts'
-import ModalLogIn from './Modals/ModalLogIn.vue'
-import ModalReg from './Modals/ModalReg.vue'
-import ModalRegCreated from './Modals/ModalRegCreated.vue'
+import { useUserStore } from '@/store/userStore.ts'
+import { useFavoriteMoviesStore } from '@/store/favoriteMoviesStore.ts'
+import ModalLogIn from '@modals/ModalLogIn.vue'
+import ModalReg from '@modals/ModalReg.vue'
+import ModalRegCreated from '@modals/ModalRegCreated.vue'
 
 // Используем stores для управления состоянием пользователя и избранных фильмов
 const userStore = useUserStore()

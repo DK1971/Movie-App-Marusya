@@ -1,19 +1,19 @@
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
-import CINEMA_API from "../api/cinemaguideAPI";
-import type { IUser } from "../types/auth.ts";
-import type { IMovies } from "../types/movies.ts";
+import CINEMA_API from "@/api/cinemaguideAPI";
+import type { IUser } from "@/types/auth.ts";
+import type { IMovies } from "@/types/movies.ts";
 
 export const useUserStore = defineStore("user", () => {
   // state
   const user = ref<IUser | null>(
     localStorage.getItem("user")
       ? JSON.parse(localStorage.getItem("user")!)
-      : null
+      : null,
   );
 
   const isAuthorized = ref<boolean>(
-    localStorage.getItem("isAuthorized") === "true"
+    localStorage.getItem("isAuthorized") === "true",
   );
   const isLoading = ref<boolean>(false);
   const favorites = ref<IMovies[] | null>(null);
@@ -142,7 +142,7 @@ export const useUserStore = defineStore("user", () => {
             // Не критичная ошибка - авторизация прошла успешно, просто не получили профиль
             console.warn(
               "Не удалось получить профиль пользователя, используем минимальные данные:",
-              profileError
+              profileError,
             );
             // Создаем минимальный объект пользователя на основе email из запроса
             user.value = {

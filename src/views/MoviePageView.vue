@@ -2,16 +2,21 @@
 import { onMounted, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useRoute } from 'vue-router';
-import MovieAboutInfo from '../components/MovieAboutInfo.vue';
-import { useMoviesStore } from '../store/moviesStore';
+// Импорт компонентов
+import MovieAboutInfo from '@layouts/MovieAboutInfo.vue';
+// Импорт из Store
+import { useMoviesStore } from '@/store/moviesStore.ts';
 
+// === ROUTER ===
 const route = useRoute();
-// === СОСТОЯНИЕ ИЗ ХРАНИЛИЩ ===
+
+// === STATE ===
 // MoviesStore
 const moviesStore = useMoviesStore();
 const { movieById, isLoading } = storeToRefs(moviesStore);
 const { getMovieById } = moviesStore;
 
+// === МЕТОДЫ ===
 const loadMovieDetails = async (id?: string | string[]) => {
   if (!id) return;
   const movieId = typeof id === 'string' ? id : id?.[0];
