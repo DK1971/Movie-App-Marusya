@@ -1,39 +1,28 @@
-import CINEMA_API from '@/api/cinemaguideAPI';
-import type { IMovies } from '@/types/movies.ts';
+// Wrapper for Movies API calls
+import { ref } from 'vue';
+import { CINEMA_API } from '@/api';
 
 export function useMoviesApi() {
-  const getTopMovies = async () => {
-    const { data } = await CINEMA_API.get<IMovies[]>('/movie/top');
-    return data;
+  const movies = ref([]);
+  const error = ref(null);
+
+  const getMovies = async () => {
+    try {
+      const response = await CINEMA_API.get('/movies');
+      movies.value = response.data;
+    } catch (err) {
+      error.value = err;
+    }
   };
 
-  const getRandomMovie = async () => {
-    const { data } = await CINEMA_API.get<IMovies>('/movie/random');
-    return data;
+  const getMoviesByTitle = async (title) => {
+    try {
+      const response = await CINEMA_API.get(`/movies?title=${title}`);
+      movies.value = response.data;
+    } catch (err) {
+      error.value = err;
+    }
   };
 
-  const getMovieById = async (id: string | number) => {
-    const { data } = await CINEMA_API.get<IMovies>(`/movie/${id}`);
-    return data;
-  };
-
-  const getMoviesByGenre = async () => {
-    const { data } = await CINEMA_API.get<string[]>('/movie/genres');
-    return data;
-  };
-
-  const searchMovies = async (query: string) => {
-    const { data } = await CINEMA_API.get<IMovies[]>(`/movie/search`, {
-      params: { q: query },
-    });
-    return data;
-  };
-
-  return {
-    getTopMovies,
-    getRandomMovie,
-    getMovieById,
-    getMoviesByGenre,
-    searchMovies,
-  };
+  return { movies, error, getMovies, getMoviesByTitle };
 }
