@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { useUserStore } from '@/store/userStore.ts'
-import { useFavoriteMoviesStore } from '@/store/favoriteMoviesStore.ts'
+import { useUserStore } from '@store/userStore.ts'
+import { useFavoriteMoviesStore } from '@store/favoriteMoviesStore.ts'
 import ModalLogIn from '@modals/ModalLogIn.vue'
 import ModalReg from '@modals/ModalReg.vue'
 import ModalRegCreated from '@modals/ModalRegCreated.vue'
